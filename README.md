@@ -12,7 +12,7 @@ Apple marks the HomeKit framework `API_UNAVAILABLE` for **native** macOS AppKit 
 - Inventory controls: **hide** (still collect, omit from charts) and **block** (no collect / no export)
 - Background collection via HomeKit notifications + a slow scrape backstop
 - Built-in Swift Charts with 1h / 24h / 7d / 30d / custom time boxing
-- Prometheus scrape endpoint on `127.0.0.1` (default port `9105`)
+- Optional Prometheus scrape endpoint on `127.0.0.1` (opt-in in Settings; default port `9105`)
 - Mock sensor mode for UI/exporter development without HomeKit access
 
 ## Requirements
@@ -42,6 +42,8 @@ First launch should prompt for HomeKit / Home data access.
 If HomeKit signing fails on a free account: enroll in the paid Developer Program, re-select the team, then run again. Meanwhile, Settings → **Mock sensors** seeds demo data so charts and `/metrics` still work.
 
 ## Prometheus scrape
+
+Enable **Settings → Enable localhost exporter** (off by default), then:
 
 ```bash
 curl -s http://127.0.0.1:9105/metrics

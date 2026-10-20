@@ -8,7 +8,9 @@ struct MenuBarView: View {
     var body: some View {
         HStack(spacing: 12) {
             Label(appState.status.shortLabel, systemImage: appState.status.menuBarSymbol)
-            Text(verbatim: "Exporter \(appState.exporterAddress)")
+            Text(verbatim: appState.settings.exporterEnabled
+                   ? "Exporter \(appState.exporterAddress)"
+                   : "Exporter off")
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Spacer()

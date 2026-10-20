@@ -23,7 +23,8 @@ final class AppState: ObservableObject {
     @Published var customStart: Date = Date().addingTimeInterval(-86_400)
     @Published var openAtLogin: Bool = LoginItemManager.isEnabled
     @Published var lastRefreshError: String?
-    @Published var exporterAddress: String = "127.0.0.1:9105"
+    /// Menu / settings label: `off` or `127.0.0.1:port`.
+    @Published var exporterAddress: String = "off"
 
     private var refreshTask: Task<Void, Never>?
     private var didStart = false
@@ -71,15 +72,7 @@ final class AppState: ObservableObject {
         guard !didStart else { return }
         didStart = true
 
-        do {
-            try exporter.start(port: settings.exporterPort)
-            exporterAddress = "127.0.0.1:\(NumberFormatting.port(settings.exporterPort))"
-            if lastRefreshError?.localizedCaseInsensitiveContains("Exporter failed") == true {
-                lastRefreshError = nil
-            }
-        } catch {
-            lastRefreshError = "Exporter failed: \(error.localizedDescription)"
-        }
+        syncExporter()
 
         collector.start()
         refreshTask = Task { [weak self] in
@@ -89,6 +82,36 @@ final class AppState: ObservableObject {
                 try? await Task.sleep(nanoseconds: 3_000_000_000)
             }
         }
+    }
+
+    /// Start or stop the localhost Prometheus listener to match Settings.
+    func syncExporter() {
+        guard settings.exporterEnabled else {
+            exporter.stop()
+            exporterAddress = "off"
+            if lastRefreshError?.localizedCaseInsensitiveContains("Exporter") == true {
+                lastRefreshError = nil
+            }
+            pushStatusToMacBridge()
+            return
+        }
+
+        do {
+            try exporter.restart(port: settings.exporterPort)
+            exporterAddress = "127.0.0.1:\(NumberFormatting.port(settings.exporterPort))"
+            if lastRefreshError?.localizedCaseInsensitiveContains("Exporter") == true {
+                lastRefreshError = nil
+            }
+        } catch {
+            exporterAddress = "off"
+            lastRefreshError = "Exporter failed: \(error.localizedDescription)"
+        }
+        pushStatusToMacBridge()
+    }
+
+    func setExporterEnabled(_ enabled: Bool) {
+        settings.exporterEnabled = enabled
+        syncExporter()
     }
 
     func pushStatusToMacBridge() {
@@ -267,15 +290,11 @@ final class AppState: ObservableObject {
     }
 
     func applyExporterPort() {
-        do {
-            try exporter.restart(port: settings.exporterPort)
-            exporterAddress = "127.0.0.1:\(NumberFormatting.port(settings.exporterPort))"
-            if lastRefreshError?.localizedCaseInsensitiveContains("Exporter") == true {
-                lastRefreshError = nil
-            }
-        } catch {
-            lastRefreshError = "Exporter restart failed: \(error.localizedDescription)"
+        guard settings.exporterEnabled else {
+            exporterAddress = "off"
+            return
         }
+        syncExporter()
     }
 
     func toggleOpenAtLogin(_ enabled: Bool) {
