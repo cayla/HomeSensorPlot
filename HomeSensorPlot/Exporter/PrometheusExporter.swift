@@ -10,6 +10,12 @@ final class PrometheusExporter: @unchecked Sendable {
     private let queue = DispatchQueue(label: "com.cayla.HomeSensorPlot.Exporter")
     private var listener: NWListener?
     private var port: UInt16 = 9105
+    /// Generation token so stale `.ready`/`.failed` from a cancelled listener are ignored.
+    private var listenGeneration: UInt64 = 0
+
+    /// Fired on the main queue when the listener becomes ready or fails after `start`.
+    /// Success carries the bound port. Not called for intentional `stop()`.
+    var onListenStateChanged: ((Result<UInt16, Error>) -> Void)?
 
     init(store: SampleStore) {
         self.store = store
@@ -17,6 +23,8 @@ final class PrometheusExporter: @unchecked Sendable {
 
     func start(port: Int) throws {
         stop()
+        listenGeneration &+= 1
+        let generation = listenGeneration
         self.port = UInt16(clamping: max(1, min(port, 65535)))
         guard let nwPort = NWEndpoint.Port(rawValue: self.port) else {
             throw NSError(
@@ -48,9 +56,23 @@ final class PrometheusExporter: @unchecked Sendable {
         listener.newConnectionHandler = { [weak self] connection in
             self?.handle(connection)
         }
-        listener.stateUpdateHandler = { state in
-            if case .failed(let error) = state {
+        listener.stateUpdateHandler = { [weak self] state in
+            guard let self else { return }
+            switch state {
+            case .ready:
+                self.emitListenState(.success(self.port), generation: generation)
+            case .failed(let error):
                 NSLog("HomeSensorPlot exporter failed: \(error)")
+                self.queue.async {
+                    // Drop the dead listener; ignore if `stop`/`start` already replaced it.
+                    if self.listenGeneration == generation {
+                        self.listener?.cancel()
+                        self.listener = nil
+                    }
+                }
+                self.emitListenState(.failure(error), generation: generation)
+            default:
+                break
             }
         }
         listener.start(queue: queue)
@@ -58,8 +80,16 @@ final class PrometheusExporter: @unchecked Sendable {
     }
 
     func stop() {
+        listenGeneration &+= 1
         listener?.cancel()
         listener = nil
+    }
+
+    private func emitListenState(_ result: Result<UInt16, Error>, generation: UInt64) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self, self.listenGeneration == generation else { return }
+            self.onListenStateChanged?(result)
+        }
     }
 
     func restart(port: Int) throws {
