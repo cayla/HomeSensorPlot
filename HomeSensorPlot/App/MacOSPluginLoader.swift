@@ -133,8 +133,7 @@ enum MacOSPluginBootstrap {
             ) { _ in
                 Task { @MainActor in
                     guard let appState else { return }
-                    await appState.collector.forceCollectOnce()
-                    await appState.refreshUI()
+                    await appState.collectNow()
                     appState.pushStatusToMacBridge()
                 }
             }

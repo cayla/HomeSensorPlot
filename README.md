@@ -1,6 +1,6 @@
 # HomeSensorPlot
 
-Always-on Mac app (Mac Catalyst) that discovers HomeKit sensors, stores readings locally, charts them with time ranges, and exposes a localhost Prometheus exporter.
+Always-on Mac app (Mac Catalyst) that discovers HomeKit sensors, stores readings locally, charts them with time ranges, and optionally exposes a localhost Prometheus exporter.
 
 ## Why Mac Catalyst?
 
@@ -9,10 +9,11 @@ Apple marks the HomeKit framework `API_UNAVAILABLE` for **native** macOS AppKit 
 ## Features
 
 - Auto-selects HomeKit characteristics with sensor-like data (temp, humidity, light, contact, motion, air quality, battery, plus numeric/bool fallbacks)
-- Inventory controls: **hide** (still collect, omit from charts) and **block** (no collect / no export)
+- Inventory controls: **hide** (still collect, omit from charts; still appears in `/metrics` if the exporter is on) and **block** (no collect / no export)
 - Background collection via HomeKit notifications + a slow scrape backstop
 - Built-in Swift Charts with 1h / 24h / 7d / 30d / custom time boxing
-- Optional Prometheus scrape endpoint on `127.0.0.1` (opt-in in Settings; default port `9105`)
+- Optional outdoor temperature overlay (Open-Meteo) using Location; optional IP geolocation fallback is **off by default**
+- Optional Prometheus scrape endpoint on loopback only (opt-in in Settings; default port `9105`)
 - Mock sensor mode for UI/exporter development without HomeKit access
 
 ## Requirements
@@ -25,7 +26,7 @@ Apple marks the HomeKit framework `API_UNAVAILABLE` for **native** macOS AppKit 
 ## Build & run
 
 ```bash
-cd /path/to/sensorplot
+cd /path/to/HomeSensorPlot
 xcodegen generate
 open HomeSensorPlot.xcodeproj
 ```
@@ -41,9 +42,16 @@ First launch should prompt for HomeKit / Home data access.
 
 If HomeKit signing fails on a free account: enroll in the paid Developer Program, re-select the team, then run again. Meanwhile, Settings → **Mock sensors** seeds demo data so charts and `/metrics` still work.
 
+## Tests
+
+```bash
+xcodegen generate
+xcodebuild -scheme HomeSensorPlot -destination 'platform=macOS,variant=Mac Catalyst' test
+```
+
 ## Prometheus scrape
 
-Enable **Settings → Enable localhost exporter** (off by default), then:
+Enable **Settings → Enable localhost exporter** (off by default). The listener binds **loopback only**; if that bind fails, the exporter stays off (no LAN fallback).
 
 ```bash
 curl -s http://127.0.0.1:9105/metrics
@@ -58,6 +66,12 @@ scrape_configs:
     static_configs:
       - targets: ["127.0.0.1:9105"]
 ```
+
+`/metrics` includes hidden sensors (still collected) but omits blocked ones. Labels include home/room/accessory names — keep the exporter off on shared networks.
+
+## Outdoor weather
+
+Temperature charts can overlay Open-Meteo outdoor ° (uses Location). Free Open-Meteo history is capped at **7 days**. If Location fails, Settings → **Allow IP geolocation fallback** (off by default) may call geojs.io for approximate coordinates.
 
 ## Data location
 
@@ -83,7 +97,8 @@ xcodegen generate
 
 ## Notes
 
-- Exporter binds to **localhost only** (App Sandbox with `network.server` / `network.client` for TestFlight / App Store Connect)
-- HomeKit blocks **Developer ID / Direct Distribution**; use **TestFlight Internal** (or the Mac App Store) to install on another Mac
+- Exporter is opt-in and **fail-closed** on loopback bind (App Sandbox with `network.server` / `network.client` for TestFlight / App Store Connect)
+- HomeKit blocks **Developer ID / Direct Distribution**; use **TestFlight Internal** or the **Mac App Store** (including unlisted) to install on another Mac
 - SQLite lives in the app container’s Application Support
 - After install, look for the **sensor** icon in the menu bar (not the Dock)
+- Export compliance: uses only standard HTTPS / OS crypto (`ITSAppUsesNonExemptEncryption` = NO)

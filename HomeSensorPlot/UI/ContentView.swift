@@ -64,6 +64,14 @@ struct ContentView: View {
             .padding(16)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
+            if let warning = appState.storeBootstrapWarning {
+                Text(warning)
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 4)
+            }
             if let error = appState.lastRefreshError {
                 Text(error)
                     .font(.caption)

@@ -22,7 +22,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.cayla.HomeSensorPlot
         PRODUCT_NAME: HomeSensorPlot
         MARKETING_VERSION: "0.1.0"
-        CURRENT_PROJECT_VERSION: "6"
+        CURRENT_PROJECT_VERSION: "7"
         GENERATE_INFOPLIST_FILE: YES
         TARGETED_DEVICE_FAMILY: "2"
         SUPPORTS_MACCATALYST: YES
@@ -37,6 +37,7 @@ targets:
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
         INFOPLIST_KEY_NSHomeKitUsageDescription: "HomeSensorPlot reads HomeKit sensor data to record, chart, and export environmental metrics."
         INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "HomeSensorPlot uses your location to fetch local outdoor temperature for the Temperature chart."
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
         INFOPLIST_KEY_NSHumanReadableCopyright: "Copyright © Cayla"
         CODE_SIGN_ENTITLEMENTS: HomeSensorPlot/HomeSensorPlot.entitlements
         CODE_SIGN_STYLE: Automatic
@@ -75,14 +76,15 @@ targets:
     type: bundle
     platform: macOS
     sources:
-      # AppKit-only — talk via NotificationCenter / @objc selectors, not Shared Swift protocols.
+      # AppKit-only — talk via NotificationCenter; share notification name constants with the host.
       - path: macOSBridge
+      - path: Shared/MenuBarNotifications.swift
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.cayla.HomeSensorPlot.macOSBridge
         PRODUCT_NAME: macOSBridge
         MARKETING_VERSION: "0.1.0"
-        CURRENT_PROJECT_VERSION: "6"
+        CURRENT_PROJECT_VERSION: "7"
         INFOPLIST_FILE: macOSBridge/Info.plist
         SKIP_INSTALL: YES
         COMBINE_HIDPI_IMAGES: YES

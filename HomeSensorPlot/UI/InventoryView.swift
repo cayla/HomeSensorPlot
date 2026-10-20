@@ -111,7 +111,7 @@ struct InventoryView: View {
 
             Group {
                 if let value = sensor.lastValue {
-                    Text(NumberFormatting.measurement(value))
+                    Text(NumberFormatting.measurement(Self.displayValue(value, for: sensor, unit: appState.settings.temperatureUnit)))
                 } else {
                     Text("—")
                         .foregroundStyle(.secondary)
@@ -144,5 +144,15 @@ struct InventoryView: View {
             .toggleStyle(.switch)
             .frame(width: ColumnWidth.toggle)
         }
+    }
+
+    /// Inventory Latest column: convert Celsius storage for temperature metrics.
+    private static func displayValue(_ value: Double, for sensor: SensorRecord, unit: TemperatureUnit) -> Double {
+        if SensorCategory.temperature.metricNames.contains(sensor.metricName)
+            || sensor.unit.localizedCaseInsensitiveContains("celsius")
+        {
+            return unit.display(fromCelsius: value)
+        }
+        return value
     }
 }

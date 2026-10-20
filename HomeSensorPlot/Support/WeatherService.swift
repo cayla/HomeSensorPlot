@@ -10,15 +10,18 @@ struct OutdoorTemperaturePoint: Identifiable, Hashable, Sendable {
 enum WeatherServiceError: Error, LocalizedError {
     case locationDenied
     case locationUnavailable
+    case ipFallbackDisabled
     case badResponse
     case http(Int)
 
     var errorDescription: String? {
         switch self {
         case .locationDenied:
-            return "Location access denied — enable it in System Settings, or weather will use IP geolocation."
+            return "Location access denied — enable it in System Settings, or turn on IP geolocation fallback in Settings."
         case .locationUnavailable:
             return "Could not determine location for weather."
+        case .ipFallbackDisabled:
+            return "Location unavailable and IP geolocation fallback is off (Settings)."
         case .badResponse:
             return "Weather service returned invalid data."
         case .http(let code):
@@ -30,9 +33,14 @@ enum WeatherServiceError: Error, LocalizedError {
 /// Free Open-Meteo forecast/history (no API key). Values are Celsius.
 @MainActor
 final class WeatherService: NSObject, ObservableObject {
+    /// Open-Meteo `past_days` max for the free forecast endpoint.
+    static let maxHistoryDays = 7
+
     @Published private(set) var lastError: String?
     @Published private(set) var coordinate: CLLocationCoordinate2D?
     @Published private(set) var coordinateSource: String?
+    /// True when the requested chart range exceeds Open-Meteo history we can fetch.
+    @Published private(set) var historyTruncated = false
 
     private let locationManager = CLLocationManager()
     private var locationContinuation: CheckedContinuation<CLLocationCoordinate2D, Error>?
@@ -41,6 +49,7 @@ final class WeatherService: NSObject, ObservableObject {
     private var cachedPoints: [OutdoorTemperaturePoint] = []
     private var cachedRangeStart: Date?
     private var cacheFetchedAt: Date?
+    private var allowIPGeolocationFallback = false
 
     override init() {
         super.init()
@@ -48,7 +57,14 @@ final class WeatherService: NSObject, ObservableObject {
         locationManager.desiredAccuracy = kCLLocationAccuracyKilometer
     }
 
+    func configure(allowIPGeolocationFallback: Bool) {
+        self.allowIPGeolocationFallback = allowIPGeolocationFallback
+    }
+
     func fetchHourlyTemperatures(from start: Date, to end: Date = .now) async throws -> [OutdoorTemperaturePoint] {
+        let requestedDays = Int(ceil(Date().timeIntervalSince(start) / 86_400)) + 1
+        historyTruncated = requestedDays > Self.maxHistoryDays
+
         if let cachedRangeStart,
            let cacheFetchedAt,
            abs(cachedRangeStart.timeIntervalSince(start)) < 120,
@@ -59,7 +75,7 @@ final class WeatherService: NSObject, ObservableObject {
         }
 
         let coord = try await resolveCoordinate()
-        let pastDays = max(1, min(7, Int(ceil(Date().timeIntervalSince(start) / 86_400)) + 1))
+        let pastDays = max(1, min(Self.maxHistoryDays, requestedDays))
 
         var components = URLComponents(string: "https://api.open-meteo.com/v1/forecast")!
         components.queryItems = [
@@ -97,7 +113,7 @@ final class WeatherService: NSObject, ObservableObject {
         return points
     }
 
-    /// Prefer Core Location; fall back to IP geolocation (no prompt) if auth hangs or is denied.
+    /// Prefer Core Location; optional IP geolocation only when the user enabled the Settings toggle.
     private func resolveCoordinate() async throws -> CLLocationCoordinate2D {
         if let coordinate { return coordinate }
 
@@ -107,7 +123,11 @@ final class WeatherService: NSObject, ObservableObject {
             coordinateSource = "device"
             return fromDevice
         } catch {
-            NSLog("HomeSensorPlot weather: Core Location failed (%@) — trying IP geolocation", error.localizedDescription)
+            NSLog("HomeSensorPlot weather: Core Location failed (%@)", error.localizedDescription)
+            guard allowIPGeolocationFallback else {
+                throw WeatherServiceError.ipFallbackDisabled
+            }
+            NSLog("HomeSensorPlot weather: using IP geolocation fallback")
         }
 
         let fromIP = try await locateViaIP()

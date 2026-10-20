@@ -11,6 +11,7 @@ final class AppSettings: ObservableObject {
         static let temperatureUnit = "temperatureUnit"
         static let collectUnknownCharacteristics = "collectUnknownCharacteristics"
         static let showOutdoorWeather = "showOutdoorWeather"
+        static let allowIPGeolocationFallback = "allowIPGeolocationFallback"
     }
 
     /// Off by default — localhost Prometheus scrape is opt-in (App Store / review-friendly).
@@ -50,6 +51,12 @@ final class AppSettings: ObservableObject {
         didSet { UserDefaults.standard.set(showOutdoorWeather, forKey: Keys.showOutdoorWeather) }
     }
 
+    /// When outdoor weather is on and Core Location fails, optionally resolve coords via IP (third party).
+    /// Off by default — must be an explicit choice.
+    @Published var allowIPGeolocationFallback: Bool {
+        didSet { UserDefaults.standard.set(allowIPGeolocationFallback, forKey: Keys.allowIPGeolocationFallback) }
+    }
+
     init() {
         let defaults = UserDefaults.standard
         if defaults.object(forKey: Keys.exporterEnabled) == nil {
@@ -87,6 +94,12 @@ final class AppSettings: ObservableObject {
             showOutdoorWeather = true
         } else {
             showOutdoorWeather = defaults.bool(forKey: Keys.showOutdoorWeather)
+        }
+
+        if defaults.object(forKey: Keys.allowIPGeolocationFallback) == nil {
+            allowIPGeolocationFallback = false
+        } else {
+            allowIPGeolocationFallback = defaults.bool(forKey: Keys.allowIPGeolocationFallback)
         }
     }
 }
