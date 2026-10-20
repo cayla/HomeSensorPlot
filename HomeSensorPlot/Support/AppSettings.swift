@@ -3,6 +3,7 @@ import Foundation
 @MainActor
 final class AppSettings: ObservableObject {
     private enum Keys {
+        static let exporterEnabled = "exporterEnabled"
         static let exporterPort = "exporterPort"
         static let retentionDays = "retentionDays"
         static let useMockData = "useMockData"
@@ -10,6 +11,11 @@ final class AppSettings: ObservableObject {
         static let temperatureUnit = "temperatureUnit"
         static let collectUnknownCharacteristics = "collectUnknownCharacteristics"
         static let showOutdoorWeather = "showOutdoorWeather"
+    }
+
+    /// Off by default — localhost Prometheus scrape is opt-in (App Store / review-friendly).
+    @Published var exporterEnabled: Bool {
+        didSet { UserDefaults.standard.set(exporterEnabled, forKey: Keys.exporterEnabled) }
     }
 
     @Published var exporterPort: Int {
@@ -46,6 +52,11 @@ final class AppSettings: ObservableObject {
 
     init() {
         let defaults = UserDefaults.standard
+        if defaults.object(forKey: Keys.exporterEnabled) == nil {
+            exporterEnabled = false
+        } else {
+            exporterEnabled = defaults.bool(forKey: Keys.exporterEnabled)
+        }
         exporterPort = defaults.object(forKey: Keys.exporterPort) as? Int ?? 9105
         retentionDays = defaults.object(forKey: Keys.retentionDays) as? Int ?? 60
         // Prefer live HomeKit; mock is a fallback / explicit override.

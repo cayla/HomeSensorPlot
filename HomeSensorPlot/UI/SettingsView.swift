@@ -100,26 +100,36 @@ struct SettingsView: View {
             }
 
             Section("Prometheus exporter") {
-                Stepper(
-                    value: Binding(
-                        get: { appState.settings.exporterPort },
-                        set: { appState.settings.exporterPort = max(1, min($0, 65535)) }
-                    ),
-                    in: 1024...65535,
-                    step: 1
-                ) {
-                    // Force String so SwiftUI doesn’t locale-group the port (9,105).
-                    Text(verbatim: "Port: \(NumberFormatting.port(appState.settings.exporterPort))")
-                }
+                Toggle("Enable localhost exporter", isOn: Binding(
+                    get: { appState.settings.exporterEnabled },
+                    set: { appState.setExporterEnabled($0) }
+                ))
+                Text("Off by default. When on, exposes gauges at 127.0.0.1 for Prometheus scrapes (sandboxed). Leave off unless you use /metrics.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
 
-                LabeledContent("Scrape URL") {
-                    Text(verbatim: "http://\(appState.exporterAddress)/metrics")
-                        .textSelection(.enabled)
-                        .font(.system(.body, design: .monospaced))
-                }
+                if appState.settings.exporterEnabled {
+                    Stepper(
+                        value: Binding(
+                            get: { appState.settings.exporterPort },
+                            set: { appState.settings.exporterPort = max(1, min($0, 65535)) }
+                        ),
+                        in: 1024...65535,
+                        step: 1
+                    ) {
+                        // Force String so SwiftUI doesn’t locale-group the port (9,105).
+                        Text(verbatim: "Port: \(NumberFormatting.port(appState.settings.exporterPort))")
+                    }
 
-                Button("Apply Port") {
-                    appState.applyExporterPort()
+                    LabeledContent("Scrape URL") {
+                        Text(verbatim: "http://\(appState.exporterAddress)/metrics")
+                            .textSelection(.enabled)
+                            .font(.system(.body, design: .monospaced))
+                    }
+
+                    Button("Apply Port") {
+                        appState.applyExporterPort()
+                    }
                 }
             }
 
