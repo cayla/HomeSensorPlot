@@ -50,6 +50,9 @@ targets:
     info:
       path: HomeSensorPlot/Info.plist
       properties:
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        ITSAppUsesNonExemptEncryption: false
         # Required to re-open a window after close on Mac Catalyst.
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: true
