@@ -4,7 +4,7 @@ Always-on Mac app (Mac Catalyst) that discovers HomeKit sensors, stores readings
 
 ## Why Mac Catalyst?
 
-Apple marks the HomeKit framework `API_UNAVAILABLE` for **native** macOS AppKit apps. HomeKit on the Mac is supported via **Mac Catalyst** (and iOS). SensorPlot therefore builds as a Catalyst app so live HomeKit collection works. It runs as an agent-style app (`LSUIElement`) with Open at Login for low-friction always-on use.
+Apple marks the HomeKit framework `API_UNAVAILABLE` for **native** macOS AppKit apps. SensorPlot is a **Mac Catalyst** host (HomeKit + charts) plus a small native **`macOSBridge`** plugin that owns the menu bar status item — same split [ItsyHome](https://github.com/nickustinov/itsyhome-macos) uses. The window stays hidden until you choose **Open SensorPlot** from the menu bar. Enable Open at Login to keep collecting after reboot.
 
 ## Features
 
@@ -84,3 +84,4 @@ xcodegen generate
 - Exporter binds to **localhost only** (App Sandbox with `network.server` / `network.client` for TestFlight / App Store Connect)
 - HomeKit blocks **Developer ID / Direct Distribution**; use **TestFlight Internal** (or the Mac App Store) to install on another Mac
 - SQLite lives in the app container’s Application Support
+- After install, look for the **sensor** icon in the menu bar (not the Dock)

@@ -26,6 +26,46 @@ enum CatalystWindowConfigurator {
         }
     }
 
+    /// Prefer living in the menu bar: tuck Catalyst windows away after launch / close.
+    static func hideMainWindows() {
+        for scene in UIApplication.shared.connectedScenes {
+            guard let windowScene = scene as? UIWindowScene else { continue }
+            for window in windowScene.windows {
+                window.isHidden = true
+            }
+        }
+    }
+
+    /// Menu bar → Open SensorPlot.
+    static func showMainWindow() {
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        if scenes.isEmpty {
+            UIApplication.shared.requestSceneSessionActivation(nil, userActivity: nil, options: nil)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                revealConnectedWindows()
+                configure()
+            }
+            return
+        }
+        revealConnectedWindows()
+        configure()
+        UIApplication.shared.requestSceneSessionActivation(
+            scenes.first?.session,
+            userActivity: nil,
+            options: nil
+        )
+    }
+
+    private static func revealConnectedWindows() {
+        for scene in UIApplication.shared.connectedScenes {
+            guard let windowScene = scene as? UIWindowScene else { continue }
+            for window in windowScene.windows {
+                window.isHidden = false
+                window.makeKeyAndVisible()
+            }
+        }
+    }
+
     static func allowResizing() {
         for scene in UIApplication.shared.connectedScenes {
             guard let windowScene = scene as? UIWindowScene else { continue }

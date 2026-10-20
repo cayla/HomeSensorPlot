@@ -15,6 +15,11 @@ struct SensorPlotApp: App {
                     appState.start()
                     #if targetEnvironment(macCatalyst)
                     CatalystWindowConfigurator.configure()
+                    MacOSPluginBootstrap.start(appState: appState)
+                    // Stay menu-bar first: don't leave a Dock/Mission Control window hanging around.
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                        CatalystWindowConfigurator.hideMainWindows()
+                    }
                     #endif
                 }
         }

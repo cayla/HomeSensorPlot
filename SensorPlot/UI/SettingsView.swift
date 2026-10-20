@@ -128,7 +128,7 @@ struct SettingsView: View {
                     get: { appState.openAtLogin },
                     set: { appState.toggleOpenAtLogin($0) }
                 ))
-                Text("Runs as a Mac Catalyst agent app (LSUIElement). Keep it open for continuous collection; enable Open at Login for reboot persistence.")
+                Text("SensorPlot lives in the menu bar (sensor icon). Open the window from that menu when you want charts. Enable Open at Login to keep collecting after reboot.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

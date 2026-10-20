@@ -82,12 +82,26 @@ final class AppState: ObservableObject {
         }
 
         collector.start()
+        #if targetEnvironment(macCatalyst)
+        MacOSPluginBootstrap.start(appState: self)
+        #endif
         refreshTask = Task { [weak self] in
             while let self, !Task.isCancelled {
                 await self.refreshUI()
+                self.pushStatusToMacBridge()
                 try? await Task.sleep(nanoseconds: 3_000_000_000)
             }
         }
+    }
+
+    func pushStatusToMacBridge() {
+        #if targetEnvironment(macCatalyst)
+        MacOSPluginBootstrap.controller?.macBridgeUpdateStatus(
+            status.shortLabel,
+            symbolName: status.menuBarSymbol
+        )
+        MacOSPluginBootstrap.controller?.macBridgeUpdateExporter(exporterAddress)
+        #endif
     }
 
     func stop() {

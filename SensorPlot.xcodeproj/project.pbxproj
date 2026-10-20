@@ -11,6 +11,7 @@
 		02A20338694C4339139E2AAD /* HomeKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B0582D788F5055032D3075F4 /* HomeKit.framework */; };
 		0C6DF91D329BA37E8BA26B19 /* WeatherService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BAED0778271EE78953C58FB /* WeatherService.swift */; };
 		19F1C38B452A06C48FBB3344 /* HomeKitSensorProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7638361BB007F3E856CFA960 /* HomeKitSensorProvider.swift */; };
+		21C476897D5735FA51A96BFC /* MacOSController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71F9F134E68AA8971A7F1D35 /* MacOSController.swift */; };
 		2C041DE0DCD0546F35C43DE8 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C886531CF1F4BE0081708A97 /* ContentView.swift */; };
 		3835BB447A133AEB8FF89AC1 /* ChartsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1710DDC8C4A53E8B55149C8 /* ChartsView.swift */; };
 		40F35FE74EFBA60582C1FB42 /* SampleStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8399AED89AE8F1929E987989 /* SampleStoreTests.swift */; };
@@ -27,6 +28,7 @@
 		72DF8B3E39AEE9B9167D13AF /* TimeBoxTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D53156981AB2F6FC653851E3 /* TimeBoxTests.swift */; };
 		7C63CE1AF4E693A9A8005C01 /* SensorCharacteristicClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E6EE00D01502485549070F4 /* SensorCharacteristicClassifier.swift */; };
 		806696819B3AF26D5A9B17CB /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C777130C39DE0D210E94D37D /* MenuBarView.swift */; };
+		84BD93741F0ADB7CD9BF3189 /* BridgeProtocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = DACFFB8E2E21BE3E5BEF33B9 /* BridgeProtocols.swift */; };
 		84C3E206FF7E9D0823E5136F /* NumberFormattingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8FA13D4B18BA9760D331601 /* NumberFormattingTests.swift */; };
 		8D6466CFFAC900E4B5160429 /* CatalystWindowConfigurator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4617EECD04E2344291A3D41E /* CatalystWindowConfigurator.swift */; };
 		92B763D2431C1E14963FAD82 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CF1F79F0B568CBD3103AAEA /* AppState.swift */; };
@@ -34,12 +36,15 @@
 		9BE9CA4BFE2547A3683E6AA5 /* SampleStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D416E0278175DA692B7E424B /* SampleStore.swift */; };
 		9F43DDC2D7BB5F45347EAF5A /* TemperatureUnit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 192468454D5A70CF2184F555 /* TemperatureUnit.swift */; };
 		A16B1904504EF8793B8DF043 /* LoginItemManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ECB4FABEE6D44ACBCE7D3B5 /* LoginItemManager.swift */; };
+		AE7F8730D1A35E1B7FA8FB4D /* macOSBridge.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 0EFB5EE5C742F586EEC67B15 /* macOSBridge.bundle */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		BD23E2B633D9A23D0A7EFB2A /* SensorCharacteristicClassifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18A258736B5A2E745C57A6B7 /* SensorCharacteristicClassifierTests.swift */; };
 		BD8E56981CF652E0458D8882 /* SensorCategoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C78D0200158FE12B0E9B8509 /* SensorCategoryTests.swift */; };
 		BF6A15093110AB8A4B9E0653 /* InventoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6279C96772AD2CD54AC86816 /* InventoryView.swift */; };
 		DB9F7903BB8C9710A9CDBED5 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 897ED94B53F3006E9EDA3890 /* SettingsView.swift */; };
 		E80E1FA174D64353B28D7C9B /* SeriesDownsampleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77349E9D43A6C45206FA1EFF /* SeriesDownsampleTests.swift */; };
+		E972EB6F8E51066CD0D8D032 /* BridgeProtocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = DACFFB8E2E21BE3E5BEF33B9 /* BridgeProtocols.swift */; };
 		F1EB06126C5A5D9545701806 /* HomeKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B0582D788F5055032D3075F4 /* HomeKit.framework */; };
+		F42D2935C1D6B6F06A5B919B /* MacOSPluginLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9820603D77D5F09EE4878F3 /* MacOSPluginLoader.swift */; };
 		FA18870699B2C92E5F680F8C /* MockSensorSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3FBAC5C2C7E01AB78449BF6 /* MockSensorSeeder.swift */; };
 /* End PBXBuildFile section */
 
@@ -51,11 +56,19 @@
 			remoteGlobalIDString = 0830712602603532073593E2;
 			remoteInfo = SensorPlot;
 		};
+		5F589C05EE1991383DA2D050 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8544950C4912F72000AF4E43 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A0F4AB7B545B9B31983D1E7D;
+			remoteInfo = macOSBridge;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		08F25C7F5D72871EB0887E89 /* SensorCategory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SensorCategory.swift; sourceTree = "<group>"; };
 		0C134C9D283BD19505EFD21F /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
+		0EFB5EE5C742F586EEC67B15 /* macOSBridge.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = macOSBridge.bundle; sourceTree = BUILT_PRODUCTS_DIR; };
 		118532A1A3038E742DDCD303 /* SensorPlotApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SensorPlotApp.swift; sourceTree = "<group>"; };
 		18A258736B5A2E745C57A6B7 /* SensorCharacteristicClassifierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SensorCharacteristicClassifierTests.swift; sourceTree = "<group>"; };
 		192468454D5A70CF2184F555 /* TemperatureUnit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemperatureUnit.swift; sourceTree = "<group>"; };
@@ -66,12 +79,14 @@
 		4617EECD04E2344291A3D41E /* CatalystWindowConfigurator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatalystWindowConfigurator.swift; sourceTree = "<group>"; };
 		4C658D6CE5C566DBC35693D6 /* PrometheusExporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrometheusExporterTests.swift; sourceTree = "<group>"; };
 		4ECB4FABEE6D44ACBCE7D3B5 /* LoginItemManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginItemManager.swift; sourceTree = "<group>"; };
+		5CB74D239DF8EB8444FD8C8B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		5CF1F79F0B568CBD3103AAEA /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		6279C96772AD2CD54AC86816 /* InventoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InventoryView.swift; sourceTree = "<group>"; };
 		6A4DF100E1649CB561BC44E4 /* PrometheusExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrometheusExporter.swift; sourceTree = "<group>"; };
 		6DD90004AC8C425032B0D8DA /* SensorPlot.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = SensorPlot.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6FC6A460EDFB9868BE5ECB2E /* CoreLocation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreLocation.framework; path = System/Library/Frameworks/CoreLocation.framework; sourceTree = SDKROOT; };
 		71A6BCCD0627CA1129B929A9 /* SeriesDownsample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeriesDownsample.swift; sourceTree = "<group>"; };
+		71F9F134E68AA8971A7F1D35 /* MacOSController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacOSController.swift; sourceTree = "<group>"; };
 		7638361BB007F3E856CFA960 /* HomeKitSensorProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeKitSensorProvider.swift; sourceTree = "<group>"; };
 		77349E9D43A6C45206FA1EFF /* SeriesDownsampleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeriesDownsampleTests.swift; sourceTree = "<group>"; };
 		816455D1F31D66C466E93C6B /* SensorPlot.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SensorPlot.entitlements; sourceTree = "<group>"; };
@@ -87,7 +102,9 @@
 		D416E0278175DA692B7E424B /* SampleStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleStore.swift; sourceTree = "<group>"; };
 		D53156981AB2F6FC653851E3 /* TimeBoxTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeBoxTests.swift; sourceTree = "<group>"; };
 		D8FA13D4B18BA9760D331601 /* NumberFormattingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NumberFormattingTests.swift; sourceTree = "<group>"; };
+		DACFFB8E2E21BE3E5BEF33B9 /* BridgeProtocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeProtocols.swift; sourceTree = "<group>"; };
 		E3FBAC5C2C7E01AB78449BF6 /* MockSensorSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockSensorSeeder.swift; sourceTree = "<group>"; };
+		E9820603D77D5F09EE4878F3 /* MacOSPluginLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacOSPluginLoader.swift; sourceTree = "<group>"; };
 		F4C3DAC4CF1D598ABD6251EF /* NumberFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NumberFormatting.swift; sourceTree = "<group>"; };
 		F7CBADF01F3852C5D5056B8A /* SensorPlotTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SensorPlotTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -151,11 +168,21 @@
 			path = Collector;
 			sourceTree = "<group>";
 		};
+		547463A45177B114D2DB0C38 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				DACFFB8E2E21BE3E5BEF33B9 /* BridgeProtocols.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
 		6AE7C798C26DA0EDCE774F0A = {
 			isa = PBXGroup;
 			children = (
+				C6AF579978740CFF434BE8F6 /* macOSBridge */,
 				B067F59672BE4EC046E8EF43 /* SensorPlot */,
 				AEE91704ECB76F9C8F7775F4 /* SensorPlotTests */,
+				547463A45177B114D2DB0C38 /* Shared */,
 				136DE27614B9EB7D2F41ECD7 /* Frameworks */,
 				D189A41B195F6BF8AE43F26B /* Products */,
 			);
@@ -166,6 +193,7 @@
 			children = (
 				5CF1F79F0B568CBD3103AAEA /* AppState.swift */,
 				4617EECD04E2344291A3D41E /* CatalystWindowConfigurator.swift */,
+				E9820603D77D5F09EE4878F3 /* MacOSPluginLoader.swift */,
 				118532A1A3038E742DDCD303 /* SensorPlotApp.swift */,
 			);
 			path = App;
@@ -217,6 +245,15 @@
 			path = Support;
 			sourceTree = "<group>";
 		};
+		C6AF579978740CFF434BE8F6 /* macOSBridge */ = {
+			isa = PBXGroup;
+			children = (
+				5CB74D239DF8EB8444FD8C8B /* Info.plist */,
+				71F9F134E68AA8971A7F1D35 /* MacOSController.swift */,
+			);
+			path = macOSBridge;
+			sourceTree = "<group>";
+		};
 		D0541D748389E075D352278E /* Exporter */ = {
 			isa = PBXGroup;
 			children = (
@@ -228,6 +265,7 @@
 		D189A41B195F6BF8AE43F26B /* Products */ = {
 			isa = PBXGroup;
 			children = (
+				0EFB5EE5C742F586EEC67B15 /* macOSBridge.bundle */,
 				6DD90004AC8C425032B0D8DA /* SensorPlot.app */,
 				F7CBADF01F3852C5D5056B8A /* SensorPlotTests.xctest */,
 			);
@@ -257,6 +295,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				C329E6B59601901CF409332F /* PBXTargetDependency */,
 			);
 			name = SensorPlot;
 			packageProductDependencies = (
@@ -284,6 +323,23 @@
 			productReference = F7CBADF01F3852C5D5056B8A /* SensorPlotTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		A0F4AB7B545B9B31983D1E7D /* macOSBridge */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B7DF8A8D7502BFE9302EDD1D /* Build configuration list for PBXNativeTarget "macOSBridge" */;
+			buildPhases = (
+				242DB2FE53329E5F78DF9364 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = macOSBridge;
+			packageProductDependencies = (
+			);
+			productName = macOSBridge;
+			productReference = 0EFB5EE5C742F586EEC67B15 /* macOSBridge.bundle */;
+			productType = "com.apple.product-type.bundle";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -298,6 +354,10 @@
 						ProvisioningStyle = Automatic;
 					};
 					7D41D4E5C86006C9911DDDC9 = {
+						DevelopmentTeam = QR3XWABHT6;
+						ProvisioningStyle = Automatic;
+					};
+					A0F4AB7B545B9B31983D1E7D = {
 						DevelopmentTeam = QR3XWABHT6;
 						ProvisioningStyle = Automatic;
 					};
@@ -318,6 +378,7 @@
 			projectRoot = "";
 			targets = (
 				0830712602603532073593E2 /* SensorPlot */,
+				A0F4AB7B545B9B31983D1E7D /* macOSBridge */,
 				7D41D4E5C86006C9911DDDC9 /* SensorPlotTests */,
 			);
 		};
@@ -329,6 +390,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				4F037371BB299154A7C02D4B /* Assets.xcassets in Resources */,
+				AE7F8730D1A35E1B7FA8FB4D /* macOSBridge.bundle in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -350,18 +412,29 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		242DB2FE53329E5F78DF9364 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E972EB6F8E51066CD0D8D032 /* BridgeProtocols.swift in Sources */,
+				21C476897D5735FA51A96BFC /* MacOSController.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		EA3F390DD2C8136ACFDC60A1 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				4E659D770BD58E6BE67D5C8B /* AppSettings.swift in Sources */,
 				92B763D2431C1E14963FAD82 /* AppState.swift in Sources */,
+				84BD93741F0ADB7CD9BF3189 /* BridgeProtocols.swift in Sources */,
 				8D6466CFFAC900E4B5160429 /* CatalystWindowConfigurator.swift in Sources */,
 				3835BB447A133AEB8FF89AC1 /* ChartsView.swift in Sources */,
 				2C041DE0DCD0546F35C43DE8 /* ContentView.swift in Sources */,
 				19F1C38B452A06C48FBB3344 /* HomeKitSensorProvider.swift in Sources */,
 				BF6A15093110AB8A4B9E0653 /* InventoryView.swift in Sources */,
 				A16B1904504EF8793B8DF043 /* LoginItemManager.swift in Sources */,
+				F42D2935C1D6B6F06A5B919B /* MacOSPluginLoader.swift in Sources */,
 				806696819B3AF26D5A9B17CB /* MenuBarView.swift in Sources */,
 				FA18870699B2C92E5F680F8C /* MockSensorSeeder.swift in Sources */,
 				49D7A833B4061D74FF64696C /* Models.swift in Sources */,
@@ -386,6 +459,11 @@
 			isa = PBXTargetDependency;
 			target = 0830712602603532073593E2 /* SensorPlot */;
 			targetProxy = 12B1516417046F44CE0621F4 /* PBXContainerItemProxy */;
+		};
+		C329E6B59601901CF409332F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A0F4AB7B545B9B31983D1E7D /* macOSBridge */;
+			targetProxy = 5F589C05EE1991383DA2D050 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -445,7 +523,7 @@
 				CODE_SIGN_ENTITLEMENTS = SensorPlot/SensorPlot.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 4;
 				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = NO;
 				DEVELOPMENT_TEAM = QR3XWABHT6;
 				ENABLE_APP_SANDBOX = YES;
@@ -474,6 +552,27 @@
 				TARGETED_DEVICE_FAMILY = 2;
 			};
 			name = Debug;
+		};
+		CDE9B826C17F7537588F25EB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 4;
+				DEVELOPMENT_TEAM = QR3XWABHT6;
+				INFOPLIST_FILE = macOSBridge/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.cayla.SensorPlot.macOSBridge;
+				PRODUCT_NAME = macOSBridge;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
 		};
 		CDF5B5AF8F71C657CC4227FC /* Release */ = {
 			isa = XCBuildConfiguration;
@@ -521,10 +620,10 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;
@@ -538,7 +637,7 @@
 				CODE_SIGN_ENTITLEMENTS = SensorPlot/SensorPlot.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 4;
 				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = NO;
 				DEVELOPMENT_TEAM = QR3XWABHT6;
 				ENABLE_APP_SANDBOX = YES;
@@ -620,14 +719,35 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		F7E91EBDA5748DE080686FE9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 4;
+				DEVELOPMENT_TEAM = QR3XWABHT6;
+				INFOPLIST_FILE = macOSBridge/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.cayla.SensorPlot.macOSBridge;
+				PRODUCT_NAME = macOSBridge;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
 			};
 			name = Debug;
 		};
@@ -639,6 +759,15 @@
 			buildConfigurations = (
 				F0ADCDB28822DE22F7511787 /* Debug */,
 				CDF5B5AF8F71C657CC4227FC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		B7DF8A8D7502BFE9302EDD1D /* Build configuration list for PBXNativeTarget "macOSBridge" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F7E91EBDA5748DE080686FE9 /* Debug */,
+				CDE9B826C17F7537588F25EB /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
