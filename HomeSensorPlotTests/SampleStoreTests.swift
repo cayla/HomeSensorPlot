@@ -56,6 +56,21 @@ final class SampleStoreTests: XCTestCase {
         XCTAssertEqual(points[0].value, 80, accuracy: 0.0001)
     }
 
+    func testBlockedSensorsOmittedFromLatest() throws {
+        try store.upsertSensor(makeSensor(id: "ok", metric: "homekit_temperature_celsius"))
+        try store.upsertSensor(makeSensor(id: "nope", metric: "homekit_temperature_celsius", blocked: true))
+        try store.insertSample(sensorID: "ok", timestamp: Date(), value: 20)
+        try store.insertSample(sensorID: "nope", timestamp: Date(), value: 99)
+
+        let latest = try store.latestSamples(includeHidden: true)
+        XCTAssertEqual(latest.map(\.sensorID), ["ok"])
+    }
+
+    func testInsertSamplesEmptyIsNoOp() throws {
+        try store.insertSamples([])
+        XCTAssertTrue(try store.latestSamples().isEmpty)
+    }
+
     func testInsertSamplesRollsBackOnFailure() throws {
         try store.upsertSensor(makeSensor(id: "s1", metric: "homekit_temperature_celsius"))
         let ts = Date()

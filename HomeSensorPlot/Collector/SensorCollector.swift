@@ -11,7 +11,7 @@ final class SensorCollector: NSObject, ObservableObject {
     private var scrapeTask: Task<Void, Never>?
     private var pruneTask: Task<Void, Never>?
     private var characteristicToSensorID: [UUID: String] = [:]
-    private var debounce: [String: Date] = [:]
+    private var acceptance = SampleAcceptanceDebouncer()
     private var sensorCache: [String: SensorRecord] = [:]
     private var collectInFlight = false
 
@@ -145,7 +145,7 @@ final class SensorCollector: NSObject, ObservableObject {
                 try store.upsertSensor(sensor)
                 sensorCache[sensor.id] = sensor
 
-                if shouldAccept(sensorID: sensor.id, at: now) {
+                if acceptance.shouldAccept(sensorID: sensor.id, at: now) {
                     batch.append((sensor.id, now, reading.value))
                 }
 
@@ -176,14 +176,6 @@ final class SensorCollector: NSObject, ObservableObject {
         }
     }
 
-    private func shouldAccept(sensorID: String, at date: Date) -> Bool {
-        if let last = debounce[sensorID], date.timeIntervalSince(last) < 2 {
-            return false
-        }
-        debounce[sensorID] = date
-        return true
-    }
-
     private func handleCharacteristicUpdate(_ characteristic: HMCharacteristic) {
         guard let value = SensorCharacteristicClassifier.doubleValue(from: characteristic) else { return }
         guard let sensorID = characteristicToSensorID[characteristic.uniqueIdentifier] else { return }
@@ -191,7 +183,7 @@ final class SensorCollector: NSObject, ObservableObject {
         do {
             if sensorCache[sensorID]?.isBlocked == true { return }
             let now = Date()
-            guard shouldAccept(sensorID: sensorID, at: now) else { return }
+            guard acceptance.shouldAccept(sensorID: sensorID, at: now) else { return }
             try store.insertSample(sensorID: sensorID, timestamp: now, value: value)
         } catch {
             status = .error(error.localizedDescription)

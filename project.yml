@@ -22,7 +22,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.cayla.HomeSensorPlot
         PRODUCT_NAME: HomeSensorPlot
         MARKETING_VERSION: "0.1.0"
-        CURRENT_PROJECT_VERSION: "8"
+        CURRENT_PROJECT_VERSION: "9"
         GENERATE_INFOPLIST_FILE: YES
         TARGETED_DEVICE_FAMILY: "2"
         SUPPORTS_MACCATALYST: YES
@@ -87,7 +87,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.cayla.HomeSensorPlot.macOSBridge
         PRODUCT_NAME: macOSBridge
         MARKETING_VERSION: "0.1.0"
-        CURRENT_PROJECT_VERSION: "8"
+        CURRENT_PROJECT_VERSION: "9"
         INFOPLIST_FILE: macOSBridge/Info.plist
         SKIP_INSTALL: YES
         COMBINE_HIDPI_IMAGES: YES

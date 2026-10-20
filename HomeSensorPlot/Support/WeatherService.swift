@@ -51,6 +51,9 @@ final class WeatherService: NSObject, ObservableObject {
     private var cacheFetchedAt: Date?
     private var allowIPGeolocationFallback = false
 
+    /// Test seam: short-circuits Core Location (and skips IP unless fallback is enabled).
+    var coordinateResolutionOverride: Result<CLLocationCoordinate2D, Error>?
+
     override init() {
         super.init()
         locationManager.delegate = self
@@ -61,8 +64,16 @@ final class WeatherService: NSObject, ObservableObject {
         self.allowIPGeolocationFallback = allowIPGeolocationFallback
     }
 
+    static func requestedHistoryDays(from start: Date, now: Date = Date()) -> Int {
+        max(1, Int(ceil(now.timeIntervalSince(start) / 86_400)) + 1)
+    }
+
+    static func isHistoryTruncated(from start: Date, now: Date = Date()) -> Bool {
+        requestedHistoryDays(from: start, now: now) > maxHistoryDays
+    }
+
     func fetchHourlyTemperatures(from start: Date, to end: Date = .now) async throws -> [OutdoorTemperaturePoint] {
-        let requestedDays = Int(ceil(Date().timeIntervalSince(start) / 86_400)) + 1
+        let requestedDays = Self.requestedHistoryDays(from: start)
         historyTruncated = requestedDays > Self.maxHistoryDays
 
         if let cachedRangeStart,
@@ -116,6 +127,23 @@ final class WeatherService: NSObject, ObservableObject {
     /// Prefer Core Location; optional IP geolocation only when the user enabled the Settings toggle.
     private func resolveCoordinate() async throws -> CLLocationCoordinate2D {
         if let coordinate { return coordinate }
+
+        if let override = coordinateResolutionOverride {
+            switch override {
+            case .success(let coord):
+                coordinate = coord
+                coordinateSource = "override"
+                return coord
+            case .failure:
+                guard allowIPGeolocationFallback else {
+                    throw WeatherServiceError.ipFallbackDisabled
+                }
+                let fromIP = try await locateViaIP()
+                coordinate = fromIP
+                coordinateSource = "ip"
+                return fromIP
+            }
+        }
 
         do {
             let fromDevice = try await locateViaCoreLocation()
