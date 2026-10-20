@@ -1,0 +1,806 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		02C54EBF3856EC4648B7A4F6 /* InventoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7AC9EAB2B170F56C7BD19A2 /* InventoryView.swift */; };
+		0352994D473729D84BDD4EB3 /* NumberFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 304E8D892739B82D3452D45F /* NumberFormatting.swift */; };
+		0D2B63DE473B3E7190292A54 /* SeriesDownsampleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F73812BF6D71AD04F4DCFC2F /* SeriesDownsampleTests.swift */; };
+		22016087DF64AC4C67A2141C /* SensorCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 039E2641B6CCCFB63B3E7456 /* SensorCategory.swift */; };
+		2AEC0A61FDD284D284556093 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 48FECE09E743B308E1096E7D /* Assets.xcassets */; };
+		3250A0CA09BD3A1CCD913BA2 /* TimeBoxTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F096165DFA235C1D5F68C4AE /* TimeBoxTests.swift */; };
+		3DE231387EB4C1CCA4338A01 /* PrometheusExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D19F5DE7431B71719763F43 /* PrometheusExporter.swift */; };
+		4FC69604559FD08A4ADDECE1 /* MacOSController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E699970A9A46ECDFF18F809 /* MacOSController.swift */; };
+		4FFFC5CFE63534BE94B48857 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA7A26FEFAF4613039122C24 /* ContentView.swift */; };
+		5FFA9D9E122562D4DB12E85B /* BridgeProtocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0723E0240EB43E9838460A6A /* BridgeProtocols.swift */; };
+		602F9187C6C24B311F0CD8CD /* NumberFormattingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB0004CB8AF47E70807E29AA /* NumberFormattingTests.swift */; };
+		6133AFF39E3BAFCFE42CB2FF /* SensorCollector.swift in Sources */ = {isa = PBXBuildFile; fileRef = C11FA4B540741707BB2E42DA /* SensorCollector.swift */; };
+		635C068C76CD1E6AD1C65E3F /* PrometheusExporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E44D309DDC4EDD6B7EB4849A /* PrometheusExporterTests.swift */; };
+		63747186ACED1575C31C0A9E /* HomeSensorPlotApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA3639128AAF457C7772513C /* HomeSensorPlotApp.swift */; };
+		653BF1F449611EAF8F82EBF8 /* SensorCharacteristicClassifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43A4511565F566E5FFC7D48C /* SensorCharacteristicClassifierTests.swift */; };
+		6C42E7C50ED22B363CECEB5D /* SampleStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0469B76A2CCDDE43945491C4 /* SampleStoreTests.swift */; };
+		6CD1AAC087A7511C8E13388E /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE4E219084ABB11CB78B54F6 /* MenuBarView.swift */; };
+		70E0C5278B6AF8DB61775013 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71E4A12ED6696B5025DEF8D7 /* AppSettings.swift */; };
+		7421E53E87999756C9926CE5 /* MacOSPluginLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88E50A333C93088DC2C0BABE /* MacOSPluginLoader.swift */; };
+		7F881115E1D9B4BAB31450EA /* MockSensorSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DEA76C598EB38E6EEE0763B /* MockSensorSeeder.swift */; };
+		812CBA823F1CA092B2789E64 /* TemperatureUnitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E77DC5F7512391C483659523 /* TemperatureUnitTests.swift */; };
+		85CD4B469BB17EF7E4D77B02 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39391BF90F5D4D3D63F0C58B /* SettingsView.swift */; };
+		8C7A0523FD42CC3E300AA4F4 /* HomeKitSensorProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE98C6661AD7C5FB4AB07918 /* HomeKitSensorProvider.swift */; };
+		8DDADC3C41D628E2C0277889 /* SensorCharacteristicClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAE2225EDBB741033E7B23DB /* SensorCharacteristicClassifier.swift */; };
+		92B963539F247C36350E2EC3 /* HomeKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 499D2B9164A259C18533A50C /* HomeKit.framework */; };
+		9A279F312DF664765CA062F4 /* CatalystWindowConfigurator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 071664DB7C7CA0BB07F11014 /* CatalystWindowConfigurator.swift */; };
+		B278662FD05A31FBDCC695EA /* MenuBarNotifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20D353000D2FAFCC09FDBC3D /* MenuBarNotifications.swift */; };
+		B69BB2DC7D3E139886DBA932 /* ChartsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3C636351D61BD61026E1531 /* ChartsView.swift */; };
+		B8436A0398A815DD48646A4E /* LoginItemManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE0464EE8A462254AC1B50C6 /* LoginItemManager.swift */; };
+		BC8AA98666C8FD9A2EF8BB5C /* WeatherService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B872CC522BD6F4CD903072DD /* WeatherService.swift */; };
+		C092F0F563DF06B5F78D86D6 /* TemperatureUnit.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB236A5891BB77664A8C5B85 /* TemperatureUnit.swift */; };
+		C18D8547D7325DDA9D700C00 /* SensorCategoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1A505072F3ECE82B54CA099 /* SensorCategoryTests.swift */; };
+		C79AD5A7F1EE036395ECAFB3 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4D9210325A3C2ECA48D2BC1 /* AppState.swift */; };
+		DC2153BDE961AF91EC76E7D8 /* SeriesDownsample.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7116E34A12D69694A7685B4 /* SeriesDownsample.swift */; };
+		E37DF75AA491DEF7F54B7A07 /* CoreLocation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C7B9F9A1A2DFE619EB007295 /* CoreLocation.framework */; };
+		EA511ADD0A36C7E4D5A07AD2 /* HomeKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 499D2B9164A259C18533A50C /* HomeKit.framework */; };
+		F0FD4563E3C3DFA9DDA558C9 /* macOSBridge.bundle in Resources */ = {isa = PBXBuildFile; fileRef = BC74337EA0A277BD0B8C968C /* macOSBridge.bundle */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		FE39BE6CBAC0B618B39014FC /* SampleStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D600FCC5AB1212158670623 /* SampleStore.swift */; };
+		FE825DDFDFAC82C1C0A5FCF5 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 465BB5F1F6FA295F2B7CBDC1 /* Models.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		6FB7D3804A303A068850EB6D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AAD28B78E711ACECC78121B9 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = EB87F31BE34F471C3BBD6076;
+			remoteInfo = macOSBridge;
+		};
+		CD9982F81760645BFCAC8E0A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AAD28B78E711ACECC78121B9 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CA7F400AF6C513E59F7C4AD7;
+			remoteInfo = HomeSensorPlot;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		039E2641B6CCCFB63B3E7456 /* SensorCategory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SensorCategory.swift; sourceTree = "<group>"; };
+		0469B76A2CCDDE43945491C4 /* SampleStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleStoreTests.swift; sourceTree = "<group>"; };
+		071664DB7C7CA0BB07F11014 /* CatalystWindowConfigurator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatalystWindowConfigurator.swift; sourceTree = "<group>"; };
+		0723E0240EB43E9838460A6A /* BridgeProtocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeProtocols.swift; sourceTree = "<group>"; };
+		0E699970A9A46ECDFF18F809 /* MacOSController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacOSController.swift; sourceTree = "<group>"; };
+		1D600FCC5AB1212158670623 /* SampleStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleStore.swift; sourceTree = "<group>"; };
+		20D353000D2FAFCC09FDBC3D /* MenuBarNotifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarNotifications.swift; sourceTree = "<group>"; };
+		28AB67D4A25EF6EE6927552E /* HomeSensorPlot.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = HomeSensorPlot.entitlements; sourceTree = "<group>"; };
+		304E8D892739B82D3452D45F /* NumberFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NumberFormatting.swift; sourceTree = "<group>"; };
+		39391BF90F5D4D3D63F0C58B /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		43A4511565F566E5FFC7D48C /* SensorCharacteristicClassifierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SensorCharacteristicClassifierTests.swift; sourceTree = "<group>"; };
+		465BB5F1F6FA295F2B7CBDC1 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		48FECE09E743B308E1096E7D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		499D2B9164A259C18533A50C /* HomeKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = HomeKit.framework; path = System/Library/Frameworks/HomeKit.framework; sourceTree = SDKROOT; };
+		4D19F5DE7431B71719763F43 /* PrometheusExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrometheusExporter.swift; sourceTree = "<group>"; };
+		51687605E5D8F6169C69A9EA /* HomeSensorPlotTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = HomeSensorPlotTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		5DEA76C598EB38E6EEE0763B /* MockSensorSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockSensorSeeder.swift; sourceTree = "<group>"; };
+		6CA5C35AF2965336DCDD3028 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		71E4A12ED6696B5025DEF8D7 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
+		88E50A333C93088DC2C0BABE /* MacOSPluginLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacOSPluginLoader.swift; sourceTree = "<group>"; };
+		939B546DAAE8AACD22D66FAC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		9F31156F2434438F0409C9D0 /* HomeSensorPlot.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = HomeSensorPlot.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1A505072F3ECE82B54CA099 /* SensorCategoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SensorCategoryTests.swift; sourceTree = "<group>"; };
+		A7116E34A12D69694A7685B4 /* SeriesDownsample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeriesDownsample.swift; sourceTree = "<group>"; };
+		AA7A26FEFAF4613039122C24 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		AB236A5891BB77664A8C5B85 /* TemperatureUnit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemperatureUnit.swift; sourceTree = "<group>"; };
+		B4D9210325A3C2ECA48D2BC1 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		B7AC9EAB2B170F56C7BD19A2 /* InventoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InventoryView.swift; sourceTree = "<group>"; };
+		B872CC522BD6F4CD903072DD /* WeatherService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherService.swift; sourceTree = "<group>"; };
+		BC74337EA0A277BD0B8C968C /* macOSBridge.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = macOSBridge.bundle; sourceTree = BUILT_PRODUCTS_DIR; };
+		BE98C6661AD7C5FB4AB07918 /* HomeKitSensorProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeKitSensorProvider.swift; sourceTree = "<group>"; };
+		C11FA4B540741707BB2E42DA /* SensorCollector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SensorCollector.swift; sourceTree = "<group>"; };
+		C7B9F9A1A2DFE619EB007295 /* CoreLocation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreLocation.framework; path = System/Library/Frameworks/CoreLocation.framework; sourceTree = SDKROOT; };
+		CA3639128AAF457C7772513C /* HomeSensorPlotApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeSensorPlotApp.swift; sourceTree = "<group>"; };
+		CAE2225EDBB741033E7B23DB /* SensorCharacteristicClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SensorCharacteristicClassifier.swift; sourceTree = "<group>"; };
+		CB0004CB8AF47E70807E29AA /* NumberFormattingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NumberFormattingTests.swift; sourceTree = "<group>"; };
+		DE4E219084ABB11CB78B54F6 /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
+		E44D309DDC4EDD6B7EB4849A /* PrometheusExporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrometheusExporterTests.swift; sourceTree = "<group>"; };
+		E77DC5F7512391C483659523 /* TemperatureUnitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemperatureUnitTests.swift; sourceTree = "<group>"; };
+		F096165DFA235C1D5F68C4AE /* TimeBoxTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeBoxTests.swift; sourceTree = "<group>"; };
+		F3C636351D61BD61026E1531 /* ChartsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartsView.swift; sourceTree = "<group>"; };
+		F73812BF6D71AD04F4DCFC2F /* SeriesDownsampleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeriesDownsampleTests.swift; sourceTree = "<group>"; };
+		FE0464EE8A462254AC1B50C6 /* LoginItemManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginItemManager.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		BF00F0D8408A934327645B37 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				92B963539F247C36350E2EC3 /* HomeKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F4F767FEE614EC97BF4C22A6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EA511ADD0A36C7E4D5A07AD2 /* HomeKit.framework in Frameworks */,
+				E37DF75AA491DEF7F54B7A07 /* CoreLocation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		0B8236E3CC9A0C9F1B2F27D7 = {
+			isa = PBXGroup;
+			children = (
+				C2E59A55E27C9C9255B0B866 /* HomeSensorPlot */,
+				E7D12963FBED19FD7199D4A4 /* HomeSensorPlotTests */,
+				4390D53DD9C268F24C650098 /* macOSBridge */,
+				EF2726DD7DF1BA94120CA8A6 /* Shared */,
+				41AD3BAD2F7BB02BB2A373FF /* Frameworks */,
+				C00D80A8EB2D091E682CB3B0 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		41AD3BAD2F7BB02BB2A373FF /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				C7B9F9A1A2DFE619EB007295 /* CoreLocation.framework */,
+				499D2B9164A259C18533A50C /* HomeKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		4390D53DD9C268F24C650098 /* macOSBridge */ = {
+			isa = PBXGroup;
+			children = (
+				6CA5C35AF2965336DCDD3028 /* Info.plist */,
+				0E699970A9A46ECDFF18F809 /* MacOSController.swift */,
+			);
+			path = macOSBridge;
+			sourceTree = "<group>";
+		};
+		4D80BFF7107D1846E3B1C730 /* HomeKit */ = {
+			isa = PBXGroup;
+			children = (
+				BE98C6661AD7C5FB4AB07918 /* HomeKitSensorProvider.swift */,
+				CAE2225EDBB741033E7B23DB /* SensorCharacteristicClassifier.swift */,
+			);
+			path = HomeKit;
+			sourceTree = "<group>";
+		};
+		70D7284E8B0935747D904933 /* Collector */ = {
+			isa = PBXGroup;
+			children = (
+				5DEA76C598EB38E6EEE0763B /* MockSensorSeeder.swift */,
+				C11FA4B540741707BB2E42DA /* SensorCollector.swift */,
+			);
+			path = Collector;
+			sourceTree = "<group>";
+		};
+		9F522A1C1F1AECF7E07682AC /* App */ = {
+			isa = PBXGroup;
+			children = (
+				B4D9210325A3C2ECA48D2BC1 /* AppState.swift */,
+				071664DB7C7CA0BB07F11014 /* CatalystWindowConfigurator.swift */,
+				CA3639128AAF457C7772513C /* HomeSensorPlotApp.swift */,
+				88E50A333C93088DC2C0BABE /* MacOSPluginLoader.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		A99595757DC936F9A743414F /* Storage */ = {
+			isa = PBXGroup;
+			children = (
+				1D600FCC5AB1212158670623 /* SampleStore.swift */,
+			);
+			path = Storage;
+			sourceTree = "<group>";
+		};
+		AC1012F4EE05C18CE545865D /* Support */ = {
+			isa = PBXGroup;
+			children = (
+				71E4A12ED6696B5025DEF8D7 /* AppSettings.swift */,
+				FE0464EE8A462254AC1B50C6 /* LoginItemManager.swift */,
+				465BB5F1F6FA295F2B7CBDC1 /* Models.swift */,
+				304E8D892739B82D3452D45F /* NumberFormatting.swift */,
+				039E2641B6CCCFB63B3E7456 /* SensorCategory.swift */,
+				A7116E34A12D69694A7685B4 /* SeriesDownsample.swift */,
+				AB236A5891BB77664A8C5B85 /* TemperatureUnit.swift */,
+				B872CC522BD6F4CD903072DD /* WeatherService.swift */,
+			);
+			path = Support;
+			sourceTree = "<group>";
+		};
+		BDFCE8C3E5DD6D0A0F2A3625 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				F3C636351D61BD61026E1531 /* ChartsView.swift */,
+				AA7A26FEFAF4613039122C24 /* ContentView.swift */,
+				B7AC9EAB2B170F56C7BD19A2 /* InventoryView.swift */,
+				DE4E219084ABB11CB78B54F6 /* MenuBarView.swift */,
+				39391BF90F5D4D3D63F0C58B /* SettingsView.swift */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		C00D80A8EB2D091E682CB3B0 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				9F31156F2434438F0409C9D0 /* HomeSensorPlot.app */,
+				51687605E5D8F6169C69A9EA /* HomeSensorPlotTests.xctest */,
+				BC74337EA0A277BD0B8C968C /* macOSBridge.bundle */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		C2E59A55E27C9C9255B0B866 /* HomeSensorPlot */ = {
+			isa = PBXGroup;
+			children = (
+				9F522A1C1F1AECF7E07682AC /* App */,
+				70D7284E8B0935747D904933 /* Collector */,
+				F693EB3D69A258B22AFB2946 /* Exporter */,
+				4D80BFF7107D1846E3B1C730 /* HomeKit */,
+				A99595757DC936F9A743414F /* Storage */,
+				AC1012F4EE05C18CE545865D /* Support */,
+				BDFCE8C3E5DD6D0A0F2A3625 /* UI */,
+				48FECE09E743B308E1096E7D /* Assets.xcassets */,
+				28AB67D4A25EF6EE6927552E /* HomeSensorPlot.entitlements */,
+				939B546DAAE8AACD22D66FAC /* Info.plist */,
+			);
+			path = HomeSensorPlot;
+			sourceTree = "<group>";
+		};
+		E7D12963FBED19FD7199D4A4 /* HomeSensorPlotTests */ = {
+			isa = PBXGroup;
+			children = (
+				CB0004CB8AF47E70807E29AA /* NumberFormattingTests.swift */,
+				E44D309DDC4EDD6B7EB4849A /* PrometheusExporterTests.swift */,
+				0469B76A2CCDDE43945491C4 /* SampleStoreTests.swift */,
+				A1A505072F3ECE82B54CA099 /* SensorCategoryTests.swift */,
+				43A4511565F566E5FFC7D48C /* SensorCharacteristicClassifierTests.swift */,
+				F73812BF6D71AD04F4DCFC2F /* SeriesDownsampleTests.swift */,
+				E77DC5F7512391C483659523 /* TemperatureUnitTests.swift */,
+				F096165DFA235C1D5F68C4AE /* TimeBoxTests.swift */,
+			);
+			path = HomeSensorPlotTests;
+			sourceTree = "<group>";
+		};
+		EF2726DD7DF1BA94120CA8A6 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				0723E0240EB43E9838460A6A /* BridgeProtocols.swift */,
+				20D353000D2FAFCC09FDBC3D /* MenuBarNotifications.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		F693EB3D69A258B22AFB2946 /* Exporter */ = {
+			isa = PBXGroup;
+			children = (
+				4D19F5DE7431B71719763F43 /* PrometheusExporter.swift */,
+			);
+			path = Exporter;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		649D65B2A94E5FF5053D609B /* HomeSensorPlotTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 945BEAD6C055B2E1B783D804 /* Build configuration list for PBXNativeTarget "HomeSensorPlotTests" */;
+			buildPhases = (
+				EBAEF6CFB853910BB8F16329 /* Sources */,
+				BF00F0D8408A934327645B37 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C4D6EB66969DC86B5316A451 /* PBXTargetDependency */,
+			);
+			name = HomeSensorPlotTests;
+			packageProductDependencies = (
+			);
+			productName = HomeSensorPlotTests;
+			productReference = 51687605E5D8F6169C69A9EA /* HomeSensorPlotTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		CA7F400AF6C513E59F7C4AD7 /* HomeSensorPlot */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B4EE0BF84CD60406EDBDC3EA /* Build configuration list for PBXNativeTarget "HomeSensorPlot" */;
+			buildPhases = (
+				C4A63CFE29C2F6C86E70E423 /* Sources */,
+				71FC390301608624C814088B /* Resources */,
+				F4F767FEE614EC97BF4C22A6 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				EA089C4FFF587BC893578E36 /* PBXTargetDependency */,
+			);
+			name = HomeSensorPlot;
+			packageProductDependencies = (
+			);
+			productName = HomeSensorPlot;
+			productReference = 9F31156F2434438F0409C9D0 /* HomeSensorPlot.app */;
+			productType = "com.apple.product-type.application";
+		};
+		EB87F31BE34F471C3BBD6076 /* macOSBridge */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5E28CE116BCE5E64C3A99BCB /* Build configuration list for PBXNativeTarget "macOSBridge" */;
+			buildPhases = (
+				44B57D84D0B133690B6A1450 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = macOSBridge;
+			packageProductDependencies = (
+			);
+			productName = macOSBridge;
+			productReference = BC74337EA0A277BD0B8C968C /* macOSBridge.bundle */;
+			productType = "com.apple.product-type.bundle";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		AAD28B78E711ACECC78121B9 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					649D65B2A94E5FF5053D609B = {
+						DevelopmentTeam = QR3XWABHT6;
+						ProvisioningStyle = Automatic;
+					};
+					CA7F400AF6C513E59F7C4AD7 = {
+						DevelopmentTeam = QR3XWABHT6;
+						ProvisioningStyle = Automatic;
+					};
+					EB87F31BE34F471C3BBD6076 = {
+						DevelopmentTeam = QR3XWABHT6;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = B4707CAAD45D7B6D87895EE0 /* Build configuration list for PBXProject "HomeSensorPlot" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 0B8236E3CC9A0C9F1B2F27D7;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = C00D80A8EB2D091E682CB3B0 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				CA7F400AF6C513E59F7C4AD7 /* HomeSensorPlot */,
+				EB87F31BE34F471C3BBD6076 /* macOSBridge */,
+				649D65B2A94E5FF5053D609B /* HomeSensorPlotTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		71FC390301608624C814088B /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2AEC0A61FDD284D284556093 /* Assets.xcassets in Resources */,
+				F0FD4563E3C3DFA9DDA558C9 /* macOSBridge.bundle in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		44B57D84D0B133690B6A1450 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4FC69604559FD08A4ADDECE1 /* MacOSController.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C4A63CFE29C2F6C86E70E423 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				70E0C5278B6AF8DB61775013 /* AppSettings.swift in Sources */,
+				C79AD5A7F1EE036395ECAFB3 /* AppState.swift in Sources */,
+				5FFA9D9E122562D4DB12E85B /* BridgeProtocols.swift in Sources */,
+				9A279F312DF664765CA062F4 /* CatalystWindowConfigurator.swift in Sources */,
+				B69BB2DC7D3E139886DBA932 /* ChartsView.swift in Sources */,
+				4FFFC5CFE63534BE94B48857 /* ContentView.swift in Sources */,
+				8C7A0523FD42CC3E300AA4F4 /* HomeKitSensorProvider.swift in Sources */,
+				63747186ACED1575C31C0A9E /* HomeSensorPlotApp.swift in Sources */,
+				02C54EBF3856EC4648B7A4F6 /* InventoryView.swift in Sources */,
+				B8436A0398A815DD48646A4E /* LoginItemManager.swift in Sources */,
+				7421E53E87999756C9926CE5 /* MacOSPluginLoader.swift in Sources */,
+				B278662FD05A31FBDCC695EA /* MenuBarNotifications.swift in Sources */,
+				6CD1AAC087A7511C8E13388E /* MenuBarView.swift in Sources */,
+				7F881115E1D9B4BAB31450EA /* MockSensorSeeder.swift in Sources */,
+				FE825DDFDFAC82C1C0A5FCF5 /* Models.swift in Sources */,
+				0352994D473729D84BDD4EB3 /* NumberFormatting.swift in Sources */,
+				3DE231387EB4C1CCA4338A01 /* PrometheusExporter.swift in Sources */,
+				FE39BE6CBAC0B618B39014FC /* SampleStore.swift in Sources */,
+				22016087DF64AC4C67A2141C /* SensorCategory.swift in Sources */,
+				8DDADC3C41D628E2C0277889 /* SensorCharacteristicClassifier.swift in Sources */,
+				6133AFF39E3BAFCFE42CB2FF /* SensorCollector.swift in Sources */,
+				DC2153BDE961AF91EC76E7D8 /* SeriesDownsample.swift in Sources */,
+				85CD4B469BB17EF7E4D77B02 /* SettingsView.swift in Sources */,
+				C092F0F563DF06B5F78D86D6 /* TemperatureUnit.swift in Sources */,
+				BC8AA98666C8FD9A2EF8BB5C /* WeatherService.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EBAEF6CFB853910BB8F16329 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				602F9187C6C24B311F0CD8CD /* NumberFormattingTests.swift in Sources */,
+				635C068C76CD1E6AD1C65E3F /* PrometheusExporterTests.swift in Sources */,
+				6C42E7C50ED22B363CECEB5D /* SampleStoreTests.swift in Sources */,
+				C18D8547D7325DDA9D700C00 /* SensorCategoryTests.swift in Sources */,
+				653BF1F449611EAF8F82EBF8 /* SensorCharacteristicClassifierTests.swift in Sources */,
+				0D2B63DE473B3E7190292A54 /* SeriesDownsampleTests.swift in Sources */,
+				812CBA823F1CA092B2789E64 /* TemperatureUnitTests.swift in Sources */,
+				3250A0CA09BD3A1CCD913BA2 /* TimeBoxTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		C4D6EB66969DC86B5316A451 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CA7F400AF6C513E59F7C4AD7 /* HomeSensorPlot */;
+			targetProxy = CD9982F81760645BFCAC8E0A /* PBXContainerItemProxy */;
+		};
+		EA089C4FFF587BC893578E36 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = EB87F31BE34F471C3BBD6076 /* macOSBridge */;
+			targetProxy = 6FB7D3804A303A068850EB6D /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		29BF772996600DAE111CCA61 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = HomeSensorPlot/HomeSensorPlot.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 5;
+				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = NO;
+				DEVELOPMENT_TEAM = QR3XWABHT6;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = HomeSensorPlot/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = HomeSensorPlot;
+				INFOPLIST_KEY_CFBundleIconName = AppIcon;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSHomeKitUsageDescription = "HomeSensorPlot reads HomeKit sensor data to record, chart, and export environmental metrics.";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © Cayla";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "HomeSensorPlot uses your location to fetch local outdoor temperature for the Temperature chart.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.cayla.HomeSensorPlot;
+				PRODUCT_NAME = HomeSensorPlot;
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = YES;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = YES;
+				TARGETED_DEVICE_FAMILY = 2;
+			};
+			name = Release;
+		};
+		4C73C20BDD188AACB1E06C0B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = NO;
+				DEVELOPMENT_TEAM = QR3XWABHT6;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.cayla.HomeSensorPlotTests;
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = YES;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = YES;
+				TARGETED_DEVICE_FAMILY = 2;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/HomeSensorPlot.app/HomeSensorPlot";
+			};
+			name = Debug;
+		};
+		87B4E485DF3D6EC9D508BC16 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 5;
+				DEVELOPMENT_TEAM = QR3XWABHT6;
+				INFOPLIST_FILE = macOSBridge/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.cayla.HomeSensorPlot.macOSBridge;
+				PRODUCT_NAME = macOSBridge;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		ABC42CFB0C874F1C21AEE133 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = HomeSensorPlot/HomeSensorPlot.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 5;
+				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = NO;
+				DEVELOPMENT_TEAM = QR3XWABHT6;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = HomeSensorPlot/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = HomeSensorPlot;
+				INFOPLIST_KEY_CFBundleIconName = AppIcon;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSHomeKitUsageDescription = "HomeSensorPlot reads HomeKit sensor data to record, chart, and export environmental metrics.";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © Cayla";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "HomeSensorPlot uses your location to fetch local outdoor temperature for the Temperature chart.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.cayla.HomeSensorPlot;
+				PRODUCT_NAME = HomeSensorPlot;
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = YES;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = YES;
+				TARGETED_DEVICE_FAMILY = 2;
+			};
+			name = Debug;
+		};
+		BEE98EAB97619CEF97871B69 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		D80FBD9B6C3958C81E5B8255 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		DDD17106490C86D8D07AAC9B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 5;
+				DEVELOPMENT_TEAM = QR3XWABHT6;
+				INFOPLIST_FILE = macOSBridge/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.cayla.HomeSensorPlot.macOSBridge;
+				PRODUCT_NAME = macOSBridge;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+		E7B8F9F4A5DCD8A1BDBDEF23 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = NO;
+				DEVELOPMENT_TEAM = QR3XWABHT6;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.cayla.HomeSensorPlotTests;
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = YES;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = YES;
+				TARGETED_DEVICE_FAMILY = 2;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/HomeSensorPlot.app/HomeSensorPlot";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		5E28CE116BCE5E64C3A99BCB /* Build configuration list for PBXNativeTarget "macOSBridge" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				87B4E485DF3D6EC9D508BC16 /* Debug */,
+				DDD17106490C86D8D07AAC9B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		945BEAD6C055B2E1B783D804 /* Build configuration list for PBXNativeTarget "HomeSensorPlotTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4C73C20BDD188AACB1E06C0B /* Debug */,
+				E7B8F9F4A5DCD8A1BDBDEF23 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		B4707CAAD45D7B6D87895EE0 /* Build configuration list for PBXProject "HomeSensorPlot" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D80FBD9B6C3958C81E5B8255 /* Debug */,
+				BEE98EAB97619CEF97871B69 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		B4EE0BF84CD60406EDBDC3EA /* Build configuration list for PBXNativeTarget "HomeSensorPlot" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				ABC42CFB0C874F1C21AEE133 /* Debug */,
+				29BF772996600DAE111CCA61 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = AAD28B78E711ACECC78121B9 /* Project object */;
+}

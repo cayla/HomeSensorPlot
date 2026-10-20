@@ -11,7 +11,7 @@ final class MacOSControllerProxy: NSObject, iOS2Mac {
         let statusSel = NSSelectorFromString("macBridgeUpdateStatus:symbolName:")
         let exporterSel = NSSelectorFromString("macBridgeUpdateExporter:")
         guard target.responds(to: statusSel), target.responds(to: exporterSel) else {
-            NSLog("SensorPlot: plugin missing expected selectors")
+            NSLog("HomeSensorPlot: plugin missing expected selectors")
             return nil
         }
         self.target = target
@@ -56,12 +56,12 @@ enum MacOSPluginLoader {
         }
 
         guard let bundleURL else {
-            NSLog("SensorPlot: macOSBridge.bundle not found in PlugIns or Resources")
+            NSLog("HomeSensorPlot: macOSBridge.bundle not found in PlugIns or Resources")
             return nil
         }
-        NSLog("SensorPlot: loading macOSBridge from %@", bundleURL.path)
+        NSLog("HomeSensorPlot: loading macOSBridge from %@", bundleURL.path)
         guard let bundle = Bundle(url: bundleURL) else {
-            NSLog("SensorPlot: failed to open macOSBridge.bundle")
+            NSLog("HomeSensorPlot: failed to open macOSBridge.bundle")
             return nil
         }
         if !bundle.isLoaded {
@@ -73,7 +73,7 @@ enum MacOSPluginLoader {
             ?? bundle.classNamed("MacOSController")
         guard let objectType = principal as? NSObject.Type else {
             NSLog(
-                "SensorPlot: macOSBridge principalClass missing: %@",
+                "HomeSensorPlot: macOSBridge principalClass missing: %@",
                 String(describing: bundle.principalClass)
             )
             return nil
@@ -103,7 +103,7 @@ enum MacOSPluginBootstrap {
             controller = loaded
             didLoad = true
             installMenuObservers()
-            NSLog("SensorPlot: macOSBridge status item ready")
+            NSLog("HomeSensorPlot: macOSBridge status item ready")
         }
 
         appState.pushStatusToMacBridge()
@@ -120,7 +120,7 @@ enum MacOSPluginBootstrap {
                 object: nil,
                 queue: .main
             ) { _ in
-                NSLog("SensorPlot: menu Open SensorPlot")
+                NSLog("HomeSensorPlot: menu Open HomeSensorPlot")
                 CatalystWindowConfigurator.showMainWindow()
             }
         )

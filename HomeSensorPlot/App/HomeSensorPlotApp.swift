@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct SensorPlotApp: App {
+struct HomeSensorPlotApp: App {
     @StateObject private var appState: AppState
 
     init() {
@@ -20,7 +20,7 @@ struct SensorPlotApp: App {
 
     var body: some Scene {
         // Named id so we can re-open after the user closes the window.
-        WindowGroup("SensorPlot", id: "main") {
+        WindowGroup("HomeSensorPlot", id: "main") {
             ContentView()
                 .environmentObject(appState)
                 #if targetEnvironment(macCatalyst)

@@ -1,10 +1,10 @@
-# SensorPlot
+# HomeSensorPlot
 
 Always-on Mac app (Mac Catalyst) that discovers HomeKit sensors, stores readings locally, charts them with time ranges, and exposes a localhost Prometheus exporter.
 
 ## Why Mac Catalyst?
 
-Apple marks the HomeKit framework `API_UNAVAILABLE` for **native** macOS AppKit apps. SensorPlot is a **Mac Catalyst** host (HomeKit + charts) plus a small native **`macOSBridge`** plugin that owns the menu bar status item — same split [ItsyHome](https://github.com/nickustinov/itsyhome-macos) uses. The window stays hidden until you choose **Open SensorPlot** from the menu bar. Enable Open at Login to keep collecting after reboot.
+Apple marks the HomeKit framework `API_UNAVAILABLE` for **native** macOS AppKit apps. HomeSensorPlot is a **Mac Catalyst** host (HomeKit + charts) plus a small native **`macOSBridge`** plugin that owns the menu bar status item — same split [ItsyHome](https://github.com/nickustinov/itsyhome-macos) uses. The window stays hidden until you choose **Open HomeSensorPlot** from the menu bar. Enable Open at Login to keep collecting after reboot.
 
 ## Features
 
@@ -27,12 +27,12 @@ Apple marks the HomeKit framework `API_UNAVAILABLE` for **native** macOS AppKit 
 ```bash
 cd /path/to/sensorplot
 xcodegen generate
-open SensorPlot.xcodeproj
+open HomeSensorPlot.xcodeproj
 ```
 
 In Xcode:
 
-1. Select the **SensorPlot** scheme destination **My Mac (Mac Catalyst)**
+1. Select the **HomeSensorPlot** scheme destination **My Mac (Mac Catalyst)**
 2. Signing & Capabilities → choose your Team
 3. Confirm **HomeKit** capability / entitlement is present
 4. Run (⌘R)
@@ -51,7 +51,7 @@ Example scrape config:
 
 ```yaml
 scrape_configs:
-  - job_name: sensorplot
+  - job_name: homesensorplot
     scrape_interval: 30s
     static_configs:
       - targets: ["127.0.0.1:9105"]
@@ -61,7 +61,7 @@ scrape_configs:
 
 SQLite database (WAL):
 
-`~/Library/Containers/com.cayla.SensorPlot/Data/Library/Application Support/SensorPlot/sensorplot.sqlite`
+`~/Library/Containers/com.cayla.HomeSensorPlot/Data/Library/Application Support/HomeSensorPlot/homesensorplot.sqlite`
 
 (or Application Support directly if the container path differs on your system)
 

@@ -1,5 +1,5 @@
 import XCTest
-@testable import SensorPlot
+@testable import HomeSensorPlot
 
 final class PrometheusExporterTests: XCTestCase {
     func testEscapeLabel() {
@@ -16,7 +16,7 @@ final class PrometheusExporterTests: XCTestCase {
 
     func testRenderMetricsIncludesLabelsAndSkipsBlocked() throws {
         let dir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("SensorPlotTests-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("HomeSensorPlotTests-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: dir) }
 
         let store = try SampleStore(directory: dir)

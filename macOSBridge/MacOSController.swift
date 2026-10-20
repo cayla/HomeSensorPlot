@@ -10,15 +10,15 @@ public final class MacOSController: NSObject, NSMenuDelegate {
     private let statusMenuItem = NSMenuItem(title: "Starting…", action: nil, keyEquivalent: "")
     private let exporterMenuItem = NSMenuItem(title: "Exporter —", action: nil, keyEquivalent: "")
 
-    private let openWindowNotification = Notification.Name("com.cayla.SensorPlot.menu.openWindow")
-    private let collectNowNotification = Notification.Name("com.cayla.SensorPlot.menu.collectNow")
-    private let quitNotification = Notification.Name("com.cayla.SensorPlot.menu.quit")
+    private let openWindowNotification = Notification.Name("com.cayla.HomeSensorPlot.menu.openWindow")
+    private let collectNowNotification = Notification.Name("com.cayla.HomeSensorPlot.menu.collectNow")
+    private let quitNotification = Notification.Name("com.cayla.HomeSensorPlot.menu.quit")
 
     @objc public required override init() {
         super.init()
         configureStatusItem()
         rebuildMenu()
-        NSLog("SensorPlot macOSBridge: status item created")
+        NSLog("HomeSensorPlot macOSBridge: status item created")
     }
 
     @objc public func macBridgeUpdateStatus(_ text: String, symbolName: String) {
@@ -29,7 +29,7 @@ public final class MacOSController: NSObject, NSMenuDelegate {
                 let image = NSImage(systemSymbolName: symbolName, accessibilityDescription: text)
                 image?.isTemplate = true
                 button.image = image
-                button.toolTip = "SensorPlot — \(text)"
+                button.toolTip = "HomeSensorPlot — \(text)"
             }
         }
     }
@@ -44,11 +44,11 @@ public final class MacOSController: NSObject, NSMenuDelegate {
         if let button = statusItem.button {
             let image = NSImage(
                 systemSymbolName: "sensor.tag.radiowaves.forward.fill",
-                accessibilityDescription: "SensorPlot"
+                accessibilityDescription: "HomeSensorPlot"
             )
             image?.isTemplate = true
             button.image = image
-            button.toolTip = "SensorPlot"
+            button.toolTip = "HomeSensorPlot"
         }
         statusItem.menu = menu
         menu.delegate = self
@@ -63,10 +63,10 @@ public final class MacOSController: NSObject, NSMenuDelegate {
         menu.addItem(exporterMenuItem)
         menu.addItem(.separator())
 
-        menu.addItem(menuItem("Open SensorPlot", action: #selector(openWindow), key: "o"))
+        menu.addItem(menuItem("Open HomeSensorPlot", action: #selector(openWindow), key: "o"))
         menu.addItem(menuItem("Collect Now", action: #selector(collectNow), key: "r"))
         menu.addItem(.separator())
-        menu.addItem(menuItem("Quit SensorPlot", action: #selector(quit), key: "q"))
+        menu.addItem(menuItem("Quit HomeSensorPlot", action: #selector(quit), key: "q"))
     }
 
     private func menuItem(_ title: String, action: Selector, key: String) -> NSMenuItem {

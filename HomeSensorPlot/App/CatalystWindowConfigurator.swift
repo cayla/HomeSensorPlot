@@ -37,19 +37,19 @@ enum CatalystWindowConfigurator {
         }
     }
 
-    /// Menu bar → Open SensorPlot (works even after the window was closed).
+    /// Menu bar → Open HomeSensorPlot (works even after the window was closed).
     static func showMainWindow() {
         didApplyRestoredSize = false
         let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
         NSLog(
-            "SensorPlot: showMainWindow — %d scene(s), %d window(s)",
+            "HomeSensorPlot: showMainWindow — %d scene(s), %d window(s)",
             scenes.count,
             scenes.reduce(0) { $0 + $1.windows.count }
         )
 
         // 1) SwiftUI reopen (best after the user closed the window).
         if let openMain = WindowOpenRegistrarStore.openMain {
-            NSLog("SensorPlot: showMainWindow via openWindow(id: main)")
+            NSLog("HomeSensorPlot: showMainWindow via openWindow(id: main)")
             openMain()
         }
 
@@ -62,14 +62,14 @@ enum CatalystWindowConfigurator {
         }
 
         // 3) No live windows — ask UIKit for a new scene (needs SupportsMultipleScenes).
-        NSLog("SensorPlot: showMainWindow creating a new scene session")
-        let activity = NSUserActivity(activityType: "com.cayla.SensorPlot.openMainWindow")
+        NSLog("HomeSensorPlot: showMainWindow creating a new scene session")
+        let activity = NSUserActivity(activityType: "com.cayla.HomeSensorPlot.openMainWindow")
         UIApplication.shared.requestSceneSessionActivation(
             nil,
             userActivity: activity,
             options: nil
         ) { error in
-            NSLog("SensorPlot: create scene failed: %@", error.localizedDescription)
+            NSLog("HomeSensorPlot: create scene failed: %@", error.localizedDescription)
         }
         for delay in [0.15, 0.4, 0.8, 1.2] {
             DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
@@ -116,7 +116,7 @@ enum CatalystWindowConfigurator {
             let frame = CGRect(origin: origin, size: clamped(size))
             let preferences = UIWindowScene.GeometryPreferences.Mac(systemFrame: frame)
             windowScene.requestGeometryUpdate(preferences) { error in
-                NSLog("SensorPlot: window geometry update failed: %@", error.localizedDescription)
+                NSLog("HomeSensorPlot: window geometry update failed: %@", error.localizedDescription)
             }
             didApplyRestoredSize = true
         }

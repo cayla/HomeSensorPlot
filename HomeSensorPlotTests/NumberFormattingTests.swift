@@ -1,5 +1,5 @@
 import XCTest
-@testable import SensorPlot
+@testable import HomeSensorPlot
 
 final class NumberFormattingTests: XCTestCase {
     func testPortNeverUsesGrouping() {

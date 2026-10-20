@@ -107,7 +107,7 @@ final class WeatherService: NSObject, ObservableObject {
             coordinateSource = "device"
             return fromDevice
         } catch {
-            NSLog("SensorPlot weather: Core Location failed (%@) — trying IP geolocation", error.localizedDescription)
+            NSLog("HomeSensorPlot weather: Core Location failed (%@) — trying IP geolocation", error.localizedDescription)
         }
 
         let fromIP = try await locateViaIP()

@@ -20,13 +20,13 @@ enum SampleStoreError: Error, LocalizedError {
 /// Thread-safe SQLite store for sensor metadata and time-series samples.
 final class SampleStore: @unchecked Sendable {
     private var db: OpaquePointer?
-    private let queue = DispatchQueue(label: "com.cayla.SensorPlot.SampleStore", qos: .utility)
+    private let queue = DispatchQueue(label: "com.cayla.HomeSensorPlot.SampleStore", qos: .utility)
     private let path: URL
 
     init(directory: URL? = nil) throws {
         let dir = try directory ?? Self.defaultDirectory()
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        path = dir.appendingPathComponent("sensorplot.sqlite")
+        path = dir.appendingPathComponent("homesensorplot.sqlite")
         try open()
         try migrate()
     }
@@ -41,7 +41,7 @@ final class SampleStore: @unchecked Sendable {
         guard let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
             throw SampleStoreError.invalidPath
         }
-        return appSupport.appendingPathComponent("SensorPlot", isDirectory: true)
+        return appSupport.appendingPathComponent("HomeSensorPlot", isDirectory: true)
     }
 
     // MARK: - Sensors

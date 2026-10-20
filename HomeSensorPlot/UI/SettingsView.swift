@@ -55,7 +55,7 @@ struct SettingsView: View {
                         }
                     }
                 ))
-                Text("Off by default. When on, SensorPlot also records numeric/bool HAP chars as homekit_auto_* (cameras, locks, vendor junk). Charts still only show known categories.")
+                Text("Off by default. When on, HomeSensorPlot also records numeric/bool HAP chars as homekit_auto_* (cameras, locks, vendor junk). Charts still only show known categories.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
@@ -128,13 +128,13 @@ struct SettingsView: View {
                     get: { appState.openAtLogin },
                     set: { appState.toggleOpenAtLogin($0) }
                 ))
-                Text("SensorPlot lives in the menu bar (sensor icon). Open the window from that menu when you want charts. Enable Open at Login to keep collecting after reboot.")
+                Text("HomeSensorPlot lives in the menu bar (sensor icon). Open the window from that menu when you want charts. Enable Open at Login to keep collecting after reboot.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
             Section("HomeKit") {
-                Text("Needs Home data access. HomeKit is unavailable to native AppKit macOS apps, so SensorPlot uses Mac Catalyst. If signing blocks the HomeKit entitlement on a free Personal Team, enroll in the Apple Developer Program and re-run.")
+                Text("Needs Home data access. HomeKit is unavailable to native AppKit macOS apps, so HomeSensorPlot uses Mac Catalyst. If signing blocks the HomeKit entitlement on a free Personal Team, enroll in the Apple Developer Program and re-run.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
