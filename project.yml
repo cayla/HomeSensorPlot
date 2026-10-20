@@ -1,0 +1,71 @@
+name: SensorPlot
+options:
+  bundleIdPrefix: com.cayla
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+targets:
+  SensorPlot:
+    type: application
+    platform: iOS
+    supportedDestinations: [macCatalyst]
+    sources:
+      - path: SensorPlot
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.cayla.SensorPlot
+        PRODUCT_NAME: SensorPlot
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        TARGETED_DEVICE_FAMILY: "2"
+        SUPPORTS_MACCATALYST: YES
+        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
+        DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER: NO
+        INFOPLIST_KEY_LSUIElement: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        INFOPLIST_KEY_NSHomeKitUsageDescription: "SensorPlot reads HomeKit sensor data to record, chart, and export environmental metrics."
+        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "SensorPlot uses your location to fetch local outdoor temperature for the Temperature chart."
+        INFOPLIST_KEY_NSHumanReadableCopyright: "Copyright © Cayla"
+        CODE_SIGN_ENTITLEMENTS: SensorPlot/SensorPlot.entitlements
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: QR3XWABHT6
+        ENABLE_HARDENED_RUNTIME: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        SDKROOT: iphoneos
+        # Keep team/signing out of volatile xcuserdata so XcodeGen regenerates don't blank Team.
+    dependencies:
+      - sdk: HomeKit.framework
+      - sdk: CoreLocation.framework
+    entitlements:
+      path: SensorPlot/SensorPlot.entitlements
+      # Keep these here so `xcodegen generate` cannot wipe the entitlements plist.
+      properties:
+        com.apple.developer.homekit: true
+        # Hardened Runtime blocks location unless this is set (Mac Catalyst).
+        com.apple.security.personal-information.location: true
+  SensorPlotTests:
+    type: bundle.unit-test
+    platform: iOS
+    supportedDestinations: [macCatalyst]
+    sources:
+      - path: SensorPlotTests
+    dependencies:
+      - target: SensorPlot
+      - sdk: HomeKit.framework
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.cayla.SensorPlotTests
+        GENERATE_INFOPLIST_FILE: YES
+        TARGETED_DEVICE_FAMILY: "2"
+        SUPPORTS_MACCATALYST: YES
+        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
+        DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER: NO
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: QR3XWABHT6
+        SDKROOT: iphoneos
