@@ -61,6 +61,11 @@ final class AppState: ObservableObject {
         self.homeKit = homeKit
         self.collector = SensorCollector(store: store, homeKit: homeKit, settings: settings)
         self.exporter = PrometheusExporter(store: store)
+        self.exporter.onListenStateChanged = { [weak self] result in
+            Task { @MainActor in
+                self?.handleExporterListenState(result)
+            }
+        }
 
         collector.objectWillChange
             .receive(on: RunLoop.main)
@@ -104,6 +109,7 @@ final class AppState: ObservableObject {
     }
 
     /// Start or stop the localhost Prometheus listener to match Settings.
+    /// Address stays `off` until the listener reports `.ready` (avoids a fake scrape URL).
     func syncExporter() {
         guard settings.exporterEnabled else {
             exporter.stop()
@@ -116,13 +122,30 @@ final class AppState: ObservableObject {
         }
 
         do {
+            exporterAddress = "off"
             try exporter.restart(port: settings.exporterPort)
-            exporterAddress = "127.0.0.1:\(NumberFormatting.port(settings.exporterPort))"
+            // `handleExporterListenState` sets the address when Network.framework reports ready.
+        } catch {
+            // Keep the toggle on so the user can retry; never advertise a fake scrape URL.
+            exporterAddress = "off"
+            lastRefreshError = "Exporter failed: \(error.localizedDescription)"
+            pushStatusToMacBridge()
+        }
+    }
+
+    private func handleExporterListenState(_ result: Result<UInt16, Error>) {
+        guard settings.exporterEnabled else {
+            exporterAddress = "off"
+            pushStatusToMacBridge()
+            return
+        }
+        switch result {
+        case .success(let port):
+            exporterAddress = "127.0.0.1:\(NumberFormatting.port(Int(port)))"
             if lastRefreshError?.localizedCaseInsensitiveContains("Exporter") == true {
                 lastRefreshError = nil
             }
-        } catch {
-            // Keep the toggle on so the user can retry; never advertise a fake scrape URL.
+        case .failure(let error):
             exporterAddress = "off"
             lastRefreshError = "Exporter failed: \(error.localizedDescription)"
         }
