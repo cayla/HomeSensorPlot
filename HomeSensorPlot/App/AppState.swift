@@ -23,8 +23,12 @@ final class AppState: ObservableObject {
     @Published var customStart: Date = Date().addingTimeInterval(-86_400)
     @Published var openAtLogin: Bool = LoginItemManager.isEnabled
     @Published var lastRefreshError: String?
+    /// Non-fatal store path warning (temp DB fallback).
+    @Published var storeBootstrapWarning: String?
     /// Menu / settings label: `off` or `127.0.0.1:port`.
     @Published var exporterAddress: String = "off"
+    /// True when the category sidebar is in “all selected” mode (new sensors auto-enable).
+    @Published private(set) var categorySelectAllMode = true
 
     private var refreshTask: Task<Void, Never>?
     private var didStart = false
@@ -34,17 +38,29 @@ final class AppState: ObservableObject {
         let settings = AppSettings()
         self.settings = settings
         self.weather = WeatherService()
+        weather.configure(allowIPGeolocationFallback: settings.allowIPGeolocationFallback)
 
+        let store: SampleStore
         do {
-            let store = try SampleStore()
-            self.store = store
-            let homeKit = HomeKitSensorProvider()
-            self.homeKit = homeKit
-            self.collector = SensorCollector(store: store, homeKit: homeKit, settings: settings)
-            self.exporter = PrometheusExporter(store: store)
+            store = try SampleStore()
         } catch {
-            fatalError("Failed to open HomeSensorPlot store: \(error)")
+            let tmp = FileManager.default.temporaryDirectory
+                .appendingPathComponent("HomeSensorPlot-tmp-\(UUID().uuidString)", isDirectory: true)
+            do {
+                store = try SampleStore(directory: tmp)
+                storeBootstrapWarning =
+                    "Could not open Application Support database (\(error.localizedDescription)). Using a temporary store — data will not persist."
+            } catch {
+                // Temp also failed — nothing useful we can do.
+                fatalError("Failed to open HomeSensorPlot store: \(error)")
+            }
         }
+
+        self.store = store
+        let homeKit = HomeKitSensorProvider()
+        self.homeKit = homeKit
+        self.collector = SensorCollector(store: store, homeKit: homeKit, settings: settings)
+        self.exporter = PrometheusExporter(store: store)
 
         collector.objectWillChange
             .receive(on: RunLoop.main)
@@ -56,7 +72,10 @@ final class AppState: ObservableObject {
             .store(in: &cancellables)
         settings.objectWillChange
             .receive(on: RunLoop.main)
-            .sink { [weak self] _ in self?.objectWillChange.send() }
+            .sink { [weak self] _ in
+                self?.weather.configure(allowIPGeolocationFallback: settings.allowIPGeolocationFallback)
+                self?.objectWillChange.send()
+            }
             .store(in: &cancellables)
         weather.objectWillChange
             .receive(on: RunLoop.main)
@@ -103,6 +122,7 @@ final class AppState: ObservableObject {
                 lastRefreshError = nil
             }
         } catch {
+            // Keep the toggle on so the user can retry; never advertise a fake scrape URL.
             exporterAddress = "off"
             lastRefreshError = "Exporter failed: \(error.localizedDescription)"
         }
@@ -112,6 +132,24 @@ final class AppState: ObservableObject {
     func setExporterEnabled(_ enabled: Bool) {
         settings.exporterEnabled = enabled
         syncExporter()
+    }
+
+    /// Update port and rebind immediately when the exporter is enabled.
+    func setExporterPort(_ port: Int) {
+        settings.exporterPort = max(1, min(port, 65535))
+        if settings.exporterEnabled {
+            syncExporter()
+        }
+    }
+
+    @discardableResult
+    func collectNow() async -> Bool {
+        let ran = await collector.forceCollectOnce()
+        if !ran {
+            lastRefreshError = "Collection already in progress — try again in a moment."
+        }
+        await refreshUI()
+        return ran
     }
 
     func pushStatusToMacBridge() {
@@ -151,6 +189,7 @@ final class AppState: ObservableObject {
         selectedCategory = category
         let ids = Set(category.sensors(from: sensors).map(\.id))
         categoryEnabledSensorIDs = ids
+        categorySelectAllMode = true
         outdoorChartEnabled = true
         Task { await reloadCategoryChart() }
     }
@@ -168,6 +207,7 @@ final class AppState: ObservableObject {
     }
 
     func setCategorySensor(_ id: String, enabled: Bool) {
+        categorySelectAllMode = false
         if enabled {
             categoryEnabledSensorIDs.insert(id)
         } else {
@@ -177,6 +217,7 @@ final class AppState: ObservableObject {
 
     func setAllCategorySensors(enabled: Bool) {
         guard let category = selectedCategory else { return }
+        categorySelectAllMode = enabled
         if enabled {
             categoryEnabledSensorIDs = Set(category.sensors(from: sensors).map(\.id))
             outdoorChartEnabled = true
@@ -234,6 +275,7 @@ final class AppState: ObservableObject {
             categoryChartPoints = indoorOnly
 
             if category == .temperature, settings.showOutdoorWeather, outdoorChartEnabled {
+                weather.configure(allowIPGeolocationFallback: settings.allowIPGeolocationFallback)
                 await loadOutdoorWeatherOverlay(start: start, temperatureUnit: tempUnit)
             } else {
                 outdoorWeatherError = nil
@@ -264,7 +306,12 @@ final class AppState: ObservableObject {
             var merged = categoryChartPoints.filter { $0.sensorID != Self.outdoorWeatherSeriesID }
             merged.append(contentsOf: outdoorPoints)
             categoryChartPoints = merged
-            outdoorWeatherError = nil
+            if weather.historyTruncated {
+                outdoorWeatherError =
+                    "Outdoor history limited to \(WeatherService.maxHistoryDays) days (Open-Meteo)."
+            } else {
+                outdoorWeatherError = nil
+            }
         } catch {
             outdoorWeatherError = error.localizedDescription
             categoryChartPoints = categoryChartPoints.filter { $0.sensorID != Self.outdoorWeatherSeriesID }
@@ -308,24 +355,22 @@ final class AppState: ObservableObject {
 
     func enableMockDataAndReseed() {
         settings.useMockData = true
-        Task {
-            await collector.forceCollectOnce()
-            await refreshUI()
-        }
+        Task { await collectNow() }
     }
 
     func useLiveHomeKit() {
         settings.useMockData = false
-        Task {
-            await collector.forceCollectOnce()
-            await refreshUI()
-        }
+        Task { await collectNow() }
     }
 
-    /// Drop stale IDs only. Never re-enable after the user hits None (empty is intentional).
+    /// When “All” is active, pick up newly discovered sensors; after None/manual, only drop stale IDs.
     private func syncEnabledSensors(for category: SensorCategory) {
         let valid = Set(category.sensors(from: sensors).map(\.id))
-        categoryEnabledSensorIDs = categoryEnabledSensorIDs.intersection(valid)
+        if categorySelectAllMode {
+            categoryEnabledSensorIDs = valid
+        } else {
+            categoryEnabledSensorIDs = categoryEnabledSensorIDs.intersection(valid)
+        }
     }
 
 }

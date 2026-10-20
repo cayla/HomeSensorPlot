@@ -165,8 +165,13 @@ final class SampleStore: @unchecked Sendable {
         guard !samples.isEmpty else { return }
         try queue.sync {
             try exec("BEGIN IMMEDIATE")
+            var succeeded = false
             defer {
-                try? exec("COMMIT")
+                if succeeded {
+                    try? exec("COMMIT")
+                } else {
+                    try? exec("ROLLBACK")
+                }
             }
             let sql = "INSERT INTO samples (sensor_id, ts, value) VALUES (?, ?, ?)"
             var stmt: OpaquePointer?
@@ -185,6 +190,7 @@ final class SampleStore: @unchecked Sendable {
                     throw SampleStoreError.stepFailed(lastErrorMessage())
                 }
             }
+            succeeded = true
         }
     }
 

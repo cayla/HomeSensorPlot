@@ -25,9 +25,23 @@ struct SettingsView: View {
                         Task { await appState.reloadCategoryChart() }
                     }
                 ))
-                Text("Uses Open-Meteo (free, no key) and your Mac’s location for local outdoor °. Stored HomeKit values stay in Celsius for Prometheus.")
+                Text("Uses Open-Meteo (free, no key) and your Mac’s location for local outdoor °. Stored HomeKit values stay in Celsius for Prometheus. Outdoor history maxes out at \(WeatherService.maxHistoryDays) days.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+
+                if appState.settings.showOutdoorWeather {
+                    Toggle("Allow IP geolocation fallback", isOn: Binding(
+                        get: { appState.settings.allowIPGeolocationFallback },
+                        set: { enabled in
+                            appState.settings.allowIPGeolocationFallback = enabled
+                            appState.weather.configure(allowIPGeolocationFallback: enabled)
+                            Task { await appState.reloadCategoryChart() }
+                        }
+                    ))
+                    Text("Off by default. When on, if Location is denied or unavailable, HomeSensorPlot asks a third-party IP geolocation service (geojs.io) for approximate coords. Prefer enabling Location instead.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             Section("Collection") {
@@ -49,10 +63,7 @@ struct SettingsView: View {
                     get: { appState.settings.collectUnknownCharacteristics },
                     set: { enabled in
                         appState.settings.collectUnknownCharacteristics = enabled
-                        Task {
-                            await appState.collector.forceCollectOnce()
-                            await appState.refreshUI()
-                        }
+                        Task { await appState.collectNow() }
                     }
                 ))
                 Text("Off by default. When on, HomeSensorPlot also records numeric/bool HAP chars as homekit_auto_* (cameras, locks, vendor junk). Charts still only show known categories.")
@@ -92,11 +103,9 @@ struct SettingsView: View {
                 }
 
                 Button("Collect Now") {
-                    Task {
-                        await appState.collector.forceCollectOnce()
-                        await appState.refreshUI()
-                    }
+                    Task { await appState.collectNow() }
                 }
+                .disabled(appState.collector.isCollecting)
             }
 
             Section("Prometheus exporter") {
@@ -104,7 +113,7 @@ struct SettingsView: View {
                     get: { appState.settings.exporterEnabled },
                     set: { appState.setExporterEnabled($0) }
                 ))
-                Text("Off by default. When on, exposes gauges at 127.0.0.1 for Prometheus scrapes (sandboxed). Leave off unless you use /metrics.")
+                Text("Off by default. When on, binds 127.0.0.1 only (loopback). If loopback bind fails, the exporter stays off — it will not listen on your LAN.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
@@ -112,7 +121,7 @@ struct SettingsView: View {
                     Stepper(
                         value: Binding(
                             get: { appState.settings.exporterPort },
-                            set: { appState.settings.exporterPort = max(1, min($0, 65535)) }
+                            set: { appState.setExporterPort($0) }
                         ),
                         in: 1024...65535,
                         step: 1
@@ -121,14 +130,19 @@ struct SettingsView: View {
                         Text(verbatim: "Port: \(NumberFormatting.port(appState.settings.exporterPort))")
                     }
 
-                    LabeledContent("Scrape URL") {
-                        Text(verbatim: "http://\(appState.exporterAddress)/metrics")
-                            .textSelection(.enabled)
-                            .font(.system(.body, design: .monospaced))
-                    }
-
-                    Button("Apply Port") {
-                        appState.applyExporterPort()
+                    if appState.exporterAddress != "off" {
+                        LabeledContent("Scrape URL") {
+                            Text(verbatim: "http://\(appState.exporterAddress)/metrics")
+                                .textSelection(.enabled)
+                                .font(.system(.body, design: .monospaced))
+                        }
+                    } else {
+                        Text("Not listening — see the error banner, then retry with Apply Port.")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                        Button("Apply Port") {
+                            appState.applyExporterPort()
+                        }
                     }
                 }
             }

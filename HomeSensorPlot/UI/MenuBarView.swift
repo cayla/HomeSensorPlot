@@ -15,12 +15,10 @@ struct MenuBarView: View {
                 .foregroundStyle(.secondary)
             Spacer()
             Button("Collect Now") {
-                Task {
-                    await appState.collector.forceCollectOnce()
-                    await appState.refreshUI()
-                }
+                Task { await appState.collectNow() }
             }
             .buttonStyle(.bordered)
+            .disabled(appState.collector.isCollecting)
         }
         .padding(.horizontal, 4)
     }

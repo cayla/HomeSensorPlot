@@ -27,7 +27,7 @@ final class HomeKitSensorProvider: NSObject, ObservableObject {
     var onHomeKitChanged: (() -> Void)?
 
     private let manager = HMHomeManager()
-    private var continuation: CheckedContinuation<Void, Never>?
+    private var homesUpdateWaiters: [CheckedContinuation<Void, Never>] = []
 
     override init() {
         super.init()
@@ -35,10 +35,28 @@ final class HomeKitSensorProvider: NSObject, ObservableObject {
         refreshAuthorizationState()
     }
 
-    func waitUntilHomesUpdate() async {
+    /// Waits until HomeKit reports homes (or `timeout` elapses). Supports multiple waiters.
+    func waitUntilHomesUpdate(timeoutSeconds: TimeInterval = 30) async {
         if homesLoaded { return }
-        await withCheckedContinuation { continuation in
-            self.continuation = continuation
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            let scheduleTimeout = homesUpdateWaiters.isEmpty
+            homesUpdateWaiters.append(continuation)
+            if scheduleTimeout {
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: UInt64(timeoutSeconds * 1_000_000_000))
+                    if !self.homesLoaded {
+                        self.resumeHomesUpdateWaiters()
+                    }
+                }
+            }
+        }
+    }
+
+    private func resumeHomesUpdateWaiters() {
+        let waiters = homesUpdateWaiters
+        homesUpdateWaiters = []
+        for waiter in waiters {
+            waiter.resume()
         }
     }
 
@@ -213,8 +231,7 @@ extension HomeKitSensorProvider: HMHomeManagerDelegate {
         Task { @MainActor in
             self.homesLoaded = true
             self.refreshAuthorizationState()
-            self.continuation?.resume()
-            self.continuation = nil
+            self.resumeHomesUpdateWaiters()
             self.notifyChanged()
         }
     }

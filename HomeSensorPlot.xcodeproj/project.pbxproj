@@ -33,6 +33,7 @@
 		8DDADC3C41D628E2C0277889 /* SensorCharacteristicClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAE2225EDBB741033E7B23DB /* SensorCharacteristicClassifier.swift */; };
 		92B963539F247C36350E2EC3 /* HomeKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 499D2B9164A259C18533A50C /* HomeKit.framework */; };
 		9A279F312DF664765CA062F4 /* CatalystWindowConfigurator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 071664DB7C7CA0BB07F11014 /* CatalystWindowConfigurator.swift */; };
+		A2DC871FD794429A943A3DD9 /* MenuBarNotifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20D353000D2FAFCC09FDBC3D /* MenuBarNotifications.swift */; };
 		B278662FD05A31FBDCC695EA /* MenuBarNotifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20D353000D2FAFCC09FDBC3D /* MenuBarNotifications.swift */; };
 		B69BB2DC7D3E139886DBA932 /* ChartsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3C636351D61BD61026E1531 /* ChartsView.swift */; };
 		B8436A0398A815DD48646A4E /* LoginItemManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE0464EE8A462254AC1B50C6 /* LoginItemManager.swift */; };
@@ -40,6 +41,7 @@
 		C092F0F563DF06B5F78D86D6 /* TemperatureUnit.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB236A5891BB77664A8C5B85 /* TemperatureUnit.swift */; };
 		C18D8547D7325DDA9D700C00 /* SensorCategoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1A505072F3ECE82B54CA099 /* SensorCategoryTests.swift */; };
 		C79AD5A7F1EE036395ECAFB3 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4D9210325A3C2ECA48D2BC1 /* AppState.swift */; };
+		D68940503ACD986BAFC8CC75 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 41012E5B1FF58DE7E653AFA8 /* PrivacyInfo.xcprivacy */; };
 		DC2153BDE961AF91EC76E7D8 /* SeriesDownsample.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7116E34A12D69694A7685B4 /* SeriesDownsample.swift */; };
 		E37DF75AA491DEF7F54B7A07 /* CoreLocation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C7B9F9A1A2DFE619EB007295 /* CoreLocation.framework */; };
 		EA511ADD0A36C7E4D5A07AD2 /* HomeKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 499D2B9164A259C18533A50C /* HomeKit.framework */; };
@@ -76,6 +78,7 @@
 		28AB67D4A25EF6EE6927552E /* HomeSensorPlot.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = HomeSensorPlot.entitlements; sourceTree = "<group>"; };
 		304E8D892739B82D3452D45F /* NumberFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NumberFormatting.swift; sourceTree = "<group>"; };
 		39391BF90F5D4D3D63F0C58B /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		41012E5B1FF58DE7E653AFA8 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		43A4511565F566E5FFC7D48C /* SensorCharacteristicClassifierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SensorCharacteristicClassifierTests.swift; sourceTree = "<group>"; };
 		465BB5F1F6FA295F2B7CBDC1 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		48FECE09E743B308E1096E7D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -249,6 +252,7 @@
 				48FECE09E743B308E1096E7D /* Assets.xcassets */,
 				28AB67D4A25EF6EE6927552E /* HomeSensorPlot.entitlements */,
 				939B546DAAE8AACD22D66FAC /* Info.plist */,
+				41012E5B1FF58DE7E653AFA8 /* PrivacyInfo.xcprivacy */,
 			);
 			path = HomeSensorPlot;
 			sourceTree = "<group>";
@@ -394,6 +398,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				2AEC0A61FDD284D284556093 /* Assets.xcassets in Resources */,
+				D68940503ACD986BAFC8CC75 /* PrivacyInfo.xcprivacy in Resources */,
 				F0FD4563E3C3DFA9DDA558C9 /* macOSBridge.bundle in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -406,6 +411,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				4FC69604559FD08A4ADDECE1 /* MacOSController.swift in Sources */,
+				A2DC871FD794429A943A3DD9 /* MenuBarNotifications.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -479,7 +485,7 @@
 				CODE_SIGN_ENTITLEMENTS = HomeSensorPlot/HomeSensorPlot.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = NO;
 				DEVELOPMENT_TEAM = QR3XWABHT6;
 				ENABLE_APP_SANDBOX = YES;
@@ -488,6 +494,7 @@
 				INFOPLIST_FILE = HomeSensorPlot/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = HomeSensorPlot;
 				INFOPLIST_KEY_CFBundleIconName = AppIcon;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHomeKitUsageDescription = "HomeSensorPlot reads HomeKit sensor data to record, chart, and export environmental metrics.";
@@ -541,7 +548,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = QR3XWABHT6;
 				INFOPLIST_FILE = macOSBridge/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -564,7 +571,7 @@
 				CODE_SIGN_ENTITLEMENTS = HomeSensorPlot/HomeSensorPlot.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = NO;
 				DEVELOPMENT_TEAM = QR3XWABHT6;
 				ENABLE_APP_SANDBOX = YES;
@@ -573,6 +580,7 @@
 				INFOPLIST_FILE = HomeSensorPlot/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = HomeSensorPlot;
 				INFOPLIST_KEY_CFBundleIconName = AppIcon;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHomeKitUsageDescription = "HomeSensorPlot reads HomeKit sensor data to record, chart, and export environmental metrics.";
@@ -721,7 +729,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = QR3XWABHT6;
 				INFOPLIST_FILE = macOSBridge/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (

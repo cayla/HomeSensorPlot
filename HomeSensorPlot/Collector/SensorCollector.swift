@@ -15,6 +15,9 @@ final class SensorCollector: NSObject, ObservableObject {
     private var sensorCache: [String: SensorRecord] = [:]
     private var collectInFlight = false
 
+    /// True while a scrape/notification collect pass is running.
+    var isCollecting: Bool { collectInFlight }
+
     init(store: SampleStore, homeKit: HomeKitSensorProvider, settings: AppSettings) {
         self.store = store
         self.homeKit = homeKit
@@ -46,8 +49,12 @@ final class SensorCollector: NSObject, ObservableObject {
         pruneTask = nil
     }
 
-    func forceCollectOnce() async {
+    /// Returns `false` when a collect is already in flight (caller can surface feedback).
+    @discardableResult
+    func forceCollectOnce() async -> Bool {
+        guard !collectInFlight else { return false }
         await collect()
+        return true
     }
 
     private func runLoop() async {
@@ -71,7 +78,6 @@ final class SensorCollector: NSObject, ObservableObject {
     }
 
     private func collect() async {
-        guard !collectInFlight else { return }
         collectInFlight = true
         defer { collectInFlight = false }
 

@@ -10,10 +10,6 @@ public final class MacOSController: NSObject, NSMenuDelegate {
     private let statusMenuItem = NSMenuItem(title: "Starting…", action: nil, keyEquivalent: "")
     private let exporterMenuItem = NSMenuItem(title: "Exporter —", action: nil, keyEquivalent: "")
 
-    private let openWindowNotification = Notification.Name("com.cayla.HomeSensorPlot.menu.openWindow")
-    private let collectNowNotification = Notification.Name("com.cayla.HomeSensorPlot.menu.collectNow")
-    private let quitNotification = Notification.Name("com.cayla.HomeSensorPlot.menu.quit")
-
     @objc public required override init() {
         super.init()
         configureStatusItem()
@@ -77,14 +73,14 @@ public final class MacOSController: NSObject, NSMenuDelegate {
 
     @objc private func openWindow() {
         NSApp.activate(ignoringOtherApps: true)
-        NotificationCenter.default.post(name: openWindowNotification, object: nil)
+        NotificationCenter.default.post(name: MenuBarNotifications.openWindow, object: nil)
     }
 
     @objc private func collectNow() {
-        NotificationCenter.default.post(name: collectNowNotification, object: nil)
+        NotificationCenter.default.post(name: MenuBarNotifications.collectNow, object: nil)
     }
 
     @objc private func quit() {
-        NotificationCenter.default.post(name: quitNotification, object: nil)
+        NotificationCenter.default.post(name: MenuBarNotifications.quit, object: nil)
     }
 }

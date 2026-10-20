@@ -2,6 +2,9 @@ import Foundation
 import Network
 
 /// Minimal localhost HTTP server exposing Prometheus text exposition at `/metrics`.
+///
+/// Bind contract: loopback only. If loopback cannot be bound, `start` throws — we never
+/// fall back to all-interfaces (HomeKit labels must not be LAN-reachable).
 final class PrometheusExporter: @unchecked Sendable {
     private let store: SampleStore
     private let queue = DispatchQueue(label: "com.cayla.HomeSensorPlot.Exporter")
@@ -24,18 +27,22 @@ final class PrometheusExporter: @unchecked Sendable {
         }
 
         // Catalyst rejects `requiredLocalEndpoint = 127.0.0.1` with NWError 22.
-        // Prefer loopback interface; fall back to any-interface bind if needed.
+        // Restrict to the loopback interface instead; fail closed if that fails.
+        let parameters = NWParameters.tcp
+        parameters.allowLocalEndpointReuse = true
+        parameters.requiredInterfaceType = .loopback
         let listener: NWListener
         do {
-            let parameters = NWParameters.tcp
-            parameters.allowLocalEndpointReuse = true
-            parameters.requiredInterfaceType = .loopback
             listener = try NWListener(using: parameters, on: nwPort)
         } catch {
-            let parameters = NWParameters.tcp
-            parameters.allowLocalEndpointReuse = true
-            listener = try NWListener(using: parameters, on: nwPort)
-            NSLog("HomeSensorPlot exporter: loopback bind failed (%@); listening on all interfaces", error.localizedDescription)
+            throw NSError(
+                domain: "HomeSensorPlot.Exporter",
+                code: 2,
+                userInfo: [
+                    NSLocalizedDescriptionKey:
+                        "Could not bind loopback :\(self.port) (\(error.localizedDescription)). Exporter stays off.",
+                ]
+            )
         }
 
         listener.newConnectionHandler = { [weak self] connection in

@@ -56,6 +56,19 @@ final class SampleStoreTests: XCTestCase {
         XCTAssertEqual(points[0].value, 80, accuracy: 0.0001)
     }
 
+    func testInsertSamplesRollsBackOnFailure() throws {
+        try store.upsertSensor(makeSensor(id: "s1", metric: "homekit_temperature_celsius"))
+        let ts = Date()
+        XCTAssertThrowsError(
+            try store.insertSamples([
+                (sensorID: "s1", timestamp: ts, value: 21),
+                (sensorID: "missing-fk", timestamp: ts, value: 22),
+            ])
+        )
+        // First row must not commit when a later insert fails.
+        XCTAssertTrue(try store.latestSamples().isEmpty)
+    }
+
     func testDeleteMockAndAutoMetrics() throws {
         try store.upsertSensor(makeSensor(id: "mock:temp", metric: "homekit_temperature_celsius"))
         try store.upsertSensor(makeSensor(id: "live", metric: "homekit_temperature_celsius"))
