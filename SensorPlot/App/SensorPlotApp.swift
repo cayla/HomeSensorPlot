@@ -15,10 +15,15 @@ struct SensorPlotApp: App {
                     appState.start()
                     #if targetEnvironment(macCatalyst)
                     CatalystWindowConfigurator.configure()
-                    MacOSPluginBootstrap.start(appState: appState)
-                    // Stay menu-bar first: don't leave a Dock/Mission Control window hanging around.
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                        CatalystWindowConfigurator.hideMainWindows()
+                    let pluginOK = MacOSPluginBootstrap.start(appState: appState)
+                    if pluginOK {
+                        // Only tuck the window away when the menu bar handle exists.
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                            CatalystWindowConfigurator.hideMainWindows()
+                        }
+                    } else {
+                        appState.lastRefreshError =
+                            "Menu bar plugin failed to load — window kept visible for debugging."
                     }
                     #endif
                 }

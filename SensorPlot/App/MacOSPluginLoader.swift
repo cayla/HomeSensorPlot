@@ -3,6 +3,40 @@ import Foundation
 #if targetEnvironment(macCatalyst)
 import UIKit
 
+/// Thin proxy so the Catalyst host can talk to the AppKit plugin without sharing a Swift
+/// protocol across module boundaries (that breaks `as?` casts).
+final class MacOSControllerProxy: NSObject, iOS2Mac {
+    private let target: NSObject
+
+    init?(target: NSObject) {
+        let statusSel = NSSelectorFromString("macBridgeUpdateStatus:symbolName:")
+        let exporterSel = NSSelectorFromString("macBridgeUpdateExporter:")
+        guard target.responds(to: statusSel), target.responds(to: exporterSel) else {
+            NSLog("SensorPlot: plugin missing expected selectors")
+            return nil
+        }
+        self.target = target
+        super.init()
+    }
+
+    var iOSBridge: Mac2iOS? {
+        get { target.value(forKey: "iOSBridge") as? Mac2iOS }
+        set { target.setValue(newValue, forKey: "iOSBridge") }
+    }
+
+    func macBridgeUpdateStatus(_ text: String, symbolName: String) {
+        target.perform(
+            NSSelectorFromString("macBridgeUpdateStatus:symbolName:"),
+            with: text,
+            with: symbolName
+        )
+    }
+
+    func macBridgeUpdateExporter(_ address: String) {
+        target.perform(NSSelectorFromString("macBridgeUpdateExporter:"), with: address)
+    }
+}
+
 /// Loads the native AppKit `macOSBridge.bundle` (status item) into the Catalyst host.
 enum MacOSPluginLoader {
     static func loadController() -> iOS2Mac? {
@@ -26,19 +60,28 @@ enum MacOSPluginLoader {
             NSLog("SensorPlot: macOSBridge.bundle not found in PlugIns or Resources")
             return nil
         }
+        NSLog("SensorPlot: loading macOSBridge from %@", bundleURL.path)
         guard let bundle = Bundle(url: bundleURL) else {
-            NSLog("SensorPlot: failed to open macOSBridge.bundle at %@", bundleURL.path)
+            NSLog("SensorPlot: failed to open macOSBridge.bundle")
             return nil
         }
-        bundle.load()
-        guard let pluginClass = bundle.principalClass as? iOS2Mac.Type else {
+        if !bundle.isLoaded {
+            bundle.load()
+        }
+
+        let principal: AnyClass? = bundle.principalClass
+            ?? NSClassFromString("MacOSController")
+            ?? bundle.classNamed("MacOSController")
+        guard let objectType = principal as? NSObject.Type else {
             NSLog(
-                "SensorPlot: macOSBridge principalClass missing or wrong type: %@",
+                "SensorPlot: macOSBridge principalClass missing: %@",
                 String(describing: bundle.principalClass)
             )
             return nil
         }
-        return pluginClass.init()
+        let instance = objectType.init()
+        guard let proxy = MacOSControllerProxy(target: instance) else { return nil }
+        return proxy
     }
 }
 
@@ -51,7 +94,7 @@ final class MacBridgeHost: NSObject, Mac2iOS {
         super.init()
     }
 
-    func macBridgeForceCollect() {
+    @objc func macBridgeForceCollect() {
         Task { @MainActor in
             guard let appState else { return }
             await appState.collector.forceCollectOnce()
@@ -60,13 +103,13 @@ final class MacBridgeHost: NSObject, Mac2iOS {
         }
     }
 
-    func macBridgeShowWindow() {
+    @objc func macBridgeShowWindow() {
         Task { @MainActor in
             CatalystWindowConfigurator.showMainWindow()
         }
     }
 
-    func macBridgeQuit() {
+    @objc func macBridgeQuit() {
         Task { @MainActor in
             appState?.stop()
             exit(0)
@@ -78,18 +121,25 @@ final class MacBridgeHost: NSObject, Mac2iOS {
 enum MacOSPluginBootstrap {
     private(set) static var controller: iOS2Mac?
     private static var host: MacBridgeHost?
+    private(set) static var didLoad = false
 
     @MainActor
-    static func start(appState: AppState) {
+    @discardableResult
+    static func start(appState: AppState) -> Bool {
         if controller == nil {
-            guard let loaded = MacOSPluginLoader.loadController() else { return }
+            guard let loaded = MacOSPluginLoader.loadController() else {
+                didLoad = false
+                return false
+            }
             controller = loaded
+            didLoad = true
             NSLog("SensorPlot: macOSBridge status item ready")
         }
         let host = MacBridgeHost(appState: appState)
         self.host = host
         controller?.iOSBridge = host
         appState.pushStatusToMacBridge()
+        return didLoad
     }
 }
 #endif

@@ -2,23 +2,25 @@ import AppKit
 import Foundation
 
 /// Native macOS plugin entry point — owns the menu bar status item.
-/// HomeKit stays in the Catalyst host; this bundle is AppKit-only (ItsyHome-style split).
+/// Speaks to the Catalyst host via @objc selectors (no shared Swift protocol module).
 @objc(MacOSController)
-public final class MacOSController: NSObject, iOS2Mac, NSMenuDelegate {
+public final class MacOSController: NSObject, NSMenuDelegate {
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private let menu = NSMenu()
     private let statusMenuItem = NSMenuItem(title: "Starting…", action: nil, keyEquivalent: "")
     private let exporterMenuItem = NSMenuItem(title: "Exporter —", action: nil, keyEquivalent: "")
 
-    @objc public weak var iOSBridge: Mac2iOS?
+    /// Catalyst `MacBridgeHost` (Mac2iOS). Kept as AnyObject so this bundle stays AppKit-only.
+    @objc public weak var iOSBridge: AnyObject?
 
     @objc public required override init() {
         super.init()
         configureStatusItem()
         rebuildMenu()
+        NSLog("SensorPlot macOSBridge: status item created")
     }
 
-    public func macBridgeUpdateStatus(_ text: String, symbolName: String) {
+    @objc public func macBridgeUpdateStatus(_ text: String, symbolName: String) {
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             self.statusMenuItem.title = text
@@ -31,7 +33,7 @@ public final class MacOSController: NSObject, iOS2Mac, NSMenuDelegate {
         }
     }
 
-    public func macBridgeUpdateExporter(_ address: String) {
+    @objc public func macBridgeUpdateExporter(_ address: String) {
         DispatchQueue.main.async { [weak self] in
             self?.exporterMenuItem.title = "Exporter \(address)"
         }
@@ -73,14 +75,14 @@ public final class MacOSController: NSObject, iOS2Mac, NSMenuDelegate {
     }
 
     @objc private func openWindow() {
-        iOSBridge?.macBridgeShowWindow()
+        _ = iOSBridge?.perform(NSSelectorFromString("macBridgeShowWindow"))
     }
 
     @objc private func collectNow() {
-        iOSBridge?.macBridgeForceCollect()
+        _ = iOSBridge?.perform(NSSelectorFromString("macBridgeForceCollect"))
     }
 
     @objc private func quit() {
-        iOSBridge?.macBridgeQuit()
+        _ = iOSBridge?.perform(NSSelectorFromString("macBridgeQuit"))
     }
 }

@@ -67,8 +67,9 @@ targets:
     type: bundle
     platform: macOS
     sources:
+      # AppKit-only — do not compile Shared protocols here (cross-module Swift
+      # protocol casts break plugin loading). Talk via @objc selectors instead.
       - path: macOSBridge
-      - path: Shared
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.cayla.SensorPlot.macOSBridge

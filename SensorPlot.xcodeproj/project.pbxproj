@@ -42,7 +42,6 @@
 		BF6A15093110AB8A4B9E0653 /* InventoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6279C96772AD2CD54AC86816 /* InventoryView.swift */; };
 		DB9F7903BB8C9710A9CDBED5 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 897ED94B53F3006E9EDA3890 /* SettingsView.swift */; };
 		E80E1FA174D64353B28D7C9B /* SeriesDownsampleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77349E9D43A6C45206FA1EFF /* SeriesDownsampleTests.swift */; };
-		E972EB6F8E51066CD0D8D032 /* BridgeProtocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = DACFFB8E2E21BE3E5BEF33B9 /* BridgeProtocols.swift */; };
 		F1EB06126C5A5D9545701806 /* HomeKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B0582D788F5055032D3075F4 /* HomeKit.framework */; };
 		F42D2935C1D6B6F06A5B919B /* MacOSPluginLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9820603D77D5F09EE4878F3 /* MacOSPluginLoader.swift */; };
 		FA18870699B2C92E5F680F8C /* MockSensorSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3FBAC5C2C7E01AB78449BF6 /* MockSensorSeeder.swift */; };
@@ -416,7 +415,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E972EB6F8E51066CD0D8D032 /* BridgeProtocols.swift in Sources */,
 				21C476897D5735FA51A96BFC /* MacOSController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

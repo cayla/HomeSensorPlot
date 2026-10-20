@@ -82,9 +82,6 @@ final class AppState: ObservableObject {
         }
 
         collector.start()
-        #if targetEnvironment(macCatalyst)
-        MacOSPluginBootstrap.start(appState: self)
-        #endif
         refreshTask = Task { [weak self] in
             while let self, !Task.isCancelled {
                 await self.refreshUI()
