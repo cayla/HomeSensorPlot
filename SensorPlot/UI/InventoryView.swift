@@ -4,6 +4,14 @@ struct InventoryView: View {
     @EnvironmentObject private var appState: AppState
     @State private var filter: String = ""
 
+    /// Fixed columns sized so Latest fits values like `5,047.13`; Accessory takes the rest.
+    private enum ColumnWidth {
+        static let location: CGFloat = 140
+        static let metric: CGFloat = 170
+        static let latest: CGFloat = 88
+        static let toggle: CGFloat = 60
+    }
+
     private var filtered: [SensorRecord] {
         let q = filter.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard !q.isEmpty else { return appState.sensors }
@@ -53,15 +61,15 @@ struct InventoryView: View {
             Text("Accessory")
                 .frame(maxWidth: .infinity, alignment: .leading)
             Text("Location")
-                .frame(width: 150, alignment: .leading)
+                .frame(width: ColumnWidth.location, alignment: .leading)
             Text("Metric")
-                .frame(width: 200, alignment: .leading)
+                .frame(width: ColumnWidth.metric, alignment: .leading)
             Text("Latest")
-                .frame(width: 56, alignment: .trailing)
+                .frame(width: ColumnWidth.latest, alignment: .trailing)
             Text("Hidden")
-                .frame(width: 60, alignment: .center)
+                .frame(width: ColumnWidth.toggle, alignment: .center)
             Text("Blocked")
-                .frame(width: 60, alignment: .center)
+                .frame(width: ColumnWidth.toggle, alignment: .center)
         }
         .font(.caption.weight(.semibold))
         .foregroundStyle(.secondary)
@@ -85,19 +93,21 @@ struct InventoryView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
+                    .truncationMode(.middle)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            .layoutPriority(-1)
 
             Text(sensor.locationLabel)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .lineLimit(2)
-                .frame(width: 150, alignment: .leading)
+                .frame(width: ColumnWidth.location, alignment: .leading)
 
             Text(sensor.metricName)
                 .font(.system(.caption, design: .monospaced))
                 .lineLimit(2)
-                .frame(width: 200, alignment: .leading)
+                .frame(width: ColumnWidth.metric, alignment: .leading)
 
             Group {
                 if let value = sensor.lastValue {
@@ -108,7 +118,9 @@ struct InventoryView: View {
                 }
             }
             .font(.subheadline.monospacedDigit())
-            .frame(width: 56, alignment: .trailing)
+            .lineLimit(1)
+            .minimumScaleFactor(0.85)
+            .frame(width: ColumnWidth.latest, alignment: .trailing)
 
             Toggle(
                 "Hidden",
@@ -119,7 +131,7 @@ struct InventoryView: View {
             )
             .labelsHidden()
             .toggleStyle(.switch)
-            .frame(width: 60)
+            .frame(width: ColumnWidth.toggle)
 
             Toggle(
                 "Blocked",
@@ -130,7 +142,7 @@ struct InventoryView: View {
             )
             .labelsHidden()
             .toggleStyle(.switch)
-            .frame(width: 60)
+            .frame(width: ColumnWidth.toggle)
         }
     }
 }
