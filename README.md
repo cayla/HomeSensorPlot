@@ -81,6 +81,6 @@ xcodegen generate
 
 ## Notes
 
-- Exporter binds to **localhost only**
-- Sandbox is off for personal local use so the embedded HTTP server and SQLite paths stay simple
-- Not App Store packaged; personal / sideloaded signing only for now
+- Exporter binds to **localhost only** (App Sandbox with `network.server` / `network.client` for TestFlight / App Store Connect)
+- HomeKit blocks **Developer ID / Direct Distribution**; use **TestFlight Internal** (or the Mac App Store) to install on another Mac
+- SQLite lives in the app container’s Application Support
