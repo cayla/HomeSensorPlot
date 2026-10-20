@@ -26,43 +26,33 @@ enum CatalystWindowConfigurator {
         }
     }
 
-    /// Prefer living in the menu bar: tuck Catalyst windows away after launch / close.
-    static func hideMainWindows() {
-        for scene in UIApplication.shared.connectedScenes {
-            guard let windowScene = scene as? UIWindowScene else { continue }
-            for window in windowScene.windows {
-                window.isHidden = true
-            }
+    /// Fully tear down Catalyst window scenes. Prefer this over `isHidden` — hiding
+    /// leaves a blank chrome on Mac Catalyst (paint → empty frame).
+    static func dismissMainWindows() {
+        let sessions = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .map(\.session)
+        for session in sessions {
+            UIApplication.shared.requestSceneSessionDestruction(session, options: nil)
         }
     }
 
     /// Menu bar → Open SensorPlot.
     static func showMainWindow() {
+        didApplyRestoredSize = false
         let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
-        if scenes.isEmpty {
-            UIApplication.shared.requestSceneSessionActivation(nil, userActivity: nil, options: nil)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                revealConnectedWindows()
-                configure()
-            }
-            return
-        }
-        revealConnectedWindows()
-        configure()
-        UIApplication.shared.requestSceneSessionActivation(
-            scenes.first?.session,
-            userActivity: nil,
-            options: nil
-        )
-    }
-
-    private static func revealConnectedWindows() {
-        for scene in UIApplication.shared.connectedScenes {
-            guard let windowScene = scene as? UIWindowScene else { continue }
-            for window in windowScene.windows {
+        if let session = scenes.first?.session {
+            for window in scenes.first?.windows ?? [] {
                 window.isHidden = false
                 window.makeKeyAndVisible()
             }
+            UIApplication.shared.requestSceneSessionActivation(session, userActivity: nil, options: nil)
+            configure()
+            return
+        }
+        UIApplication.shared.requestSceneSessionActivation(nil, userActivity: nil, options: nil)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+            configure()
         }
     }
 
