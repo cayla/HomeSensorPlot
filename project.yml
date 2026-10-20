@@ -43,7 +43,14 @@ targets:
         ENABLE_HARDENED_RUNTIME: YES
         ENABLE_APP_SANDBOX: YES
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         SDKROOT: iphoneos
+    info:
+      path: SensorPlot/Info.plist
+      properties:
+        # Required to re-open a window after close on Mac Catalyst.
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: true
     dependencies:
       - target: macOSBridge
         platformFilter: maccatalyst

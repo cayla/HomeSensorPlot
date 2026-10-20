@@ -79,6 +79,7 @@
 		4617EECD04E2344291A3D41E /* CatalystWindowConfigurator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatalystWindowConfigurator.swift; sourceTree = "<group>"; };
 		4C658D6CE5C566DBC35693D6 /* PrometheusExporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrometheusExporterTests.swift; sourceTree = "<group>"; };
 		4ECB4FABEE6D44ACBCE7D3B5 /* LoginItemManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginItemManager.swift; sourceTree = "<group>"; };
+		563BB170CFE4C3F8360D4AAD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		5CB74D239DF8EB8444FD8C8B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		5CF1F79F0B568CBD3103AAEA /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		6279C96772AD2CD54AC86816 /* InventoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InventoryView.swift; sourceTree = "<group>"; };
@@ -227,6 +228,7 @@
 				C623F7408047E56CE4157B90 /* Support */,
 				03AA38B2A9C1F30343007F41 /* UI */,
 				25354D50F848B609C7E6DFE2 /* Assets.xcassets */,
+				563BB170CFE4C3F8360D4AAD /* Info.plist */,
 				816455D1F31D66C466E93C6B /* SensorPlot.entitlements */,
 			);
 			path = SensorPlot;
@@ -531,12 +533,14 @@
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SensorPlot/Info.plist;
 				INFOPLIST_KEY_CFBundleIconName = AppIcon;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHomeKitUsageDescription = "SensorPlot reads HomeKit sensor data to record, chart, and export environmental metrics.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © Cayla";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "SensorPlot uses your location to fetch local outdoor temperature for the Temperature chart.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -645,12 +649,14 @@
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SensorPlot/Info.plist;
 				INFOPLIST_KEY_CFBundleIconName = AppIcon;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHomeKitUsageDescription = "SensorPlot reads HomeKit sensor data to record, chart, and export environmental metrics.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © Cayla";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "SensorPlot uses your location to fetch local outdoor temperature for the Temperature chart.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
