@@ -4,7 +4,7 @@ import Network
 /// Minimal localhost HTTP server exposing Prometheus text exposition at `/metrics`.
 final class PrometheusExporter: @unchecked Sendable {
     private let store: SampleStore
-    private let queue = DispatchQueue(label: "com.cayla.SensorPlot.Exporter")
+    private let queue = DispatchQueue(label: "com.cayla.HomeSensorPlot.Exporter")
     private var listener: NWListener?
     private var port: UInt16 = 9105
 
@@ -17,7 +17,7 @@ final class PrometheusExporter: @unchecked Sendable {
         self.port = UInt16(clamping: max(1, min(port, 65535)))
         guard let nwPort = NWEndpoint.Port(rawValue: self.port) else {
             throw NSError(
-                domain: "SensorPlot.Exporter",
+                domain: "HomeSensorPlot.Exporter",
                 code: 1,
                 userInfo: [NSLocalizedDescriptionKey: "Invalid exporter port"]
             )
@@ -35,7 +35,7 @@ final class PrometheusExporter: @unchecked Sendable {
             let parameters = NWParameters.tcp
             parameters.allowLocalEndpointReuse = true
             listener = try NWListener(using: parameters, on: nwPort)
-            NSLog("SensorPlot exporter: loopback bind failed (%@); listening on all interfaces", error.localizedDescription)
+            NSLog("HomeSensorPlot exporter: loopback bind failed (%@); listening on all interfaces", error.localizedDescription)
         }
 
         listener.newConnectionHandler = { [weak self] connection in
@@ -43,7 +43,7 @@ final class PrometheusExporter: @unchecked Sendable {
         }
         listener.stateUpdateHandler = { state in
             if case .failed(let error) = state {
-                NSLog("SensorPlot exporter failed: \(error)")
+                NSLog("HomeSensorPlot exporter failed: \(error)")
             }
         }
         listener.start(queue: queue)
@@ -68,7 +68,7 @@ final class PrometheusExporter: @unchecked Sendable {
         connection.receive(minimumIncompleteLength: 1, maximumLength: 64 * 1024) { [weak self] data, _, isComplete, error in
             guard let self else { return }
             if let error {
-                NSLog("SensorPlot exporter receive error: \(error)")
+                NSLog("HomeSensorPlot exporter receive error: \(error)")
                 connection.cancel()
                 return
             }
@@ -143,9 +143,9 @@ final class PrometheusExporter: @unchecked Sendable {
         }
 
         var lines: [String] = []
-        lines.append("# SensorPlot HomeKit exporter")
+        lines.append("# HomeSensorPlot HomeKit exporter")
         for metricName in grouped.keys.sorted() {
-            lines.append("# HELP \(metricName) HomeKit sensor reading exported by SensorPlot")
+            lines.append("# HELP \(metricName) HomeKit sensor reading exported by HomeSensorPlot")
             lines.append("# TYPE \(metricName) gauge")
             for sample in grouped[metricName] ?? [] {
                 let labels = [

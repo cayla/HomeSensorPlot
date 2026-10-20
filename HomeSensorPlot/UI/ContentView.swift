@@ -14,7 +14,7 @@ struct ContentView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text("SensorPlot")
+                Text("HomeSensorPlot")
                     .font(.title2.weight(.semibold))
                 Spacer()
                 statusChip

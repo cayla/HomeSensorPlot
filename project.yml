@@ -1,4 +1,4 @@
-name: SensorPlot
+name: HomeSensorPlot
 options:
   bundleIdPrefix: com.cayla
   deploymentTarget:
@@ -10,19 +10,19 @@ settings:
   base:
     SWIFT_VERSION: "5.0"
 targets:
-  SensorPlot:
+  HomeSensorPlot:
     type: application
     platform: iOS
     supportedDestinations: [macCatalyst]
     sources:
-      - path: SensorPlot
+      - path: HomeSensorPlot
       - path: Shared
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.cayla.SensorPlot
-        PRODUCT_NAME: SensorPlot
+        PRODUCT_BUNDLE_IDENTIFIER: com.cayla.HomeSensorPlot
+        PRODUCT_NAME: HomeSensorPlot
         MARKETING_VERSION: "0.1.0"
-        CURRENT_PROJECT_VERSION: "4"
+        CURRENT_PROJECT_VERSION: "5"
         GENERATE_INFOPLIST_FILE: YES
         TARGETED_DEVICE_FAMILY: "2"
         SUPPORTS_MACCATALYST: YES
@@ -30,14 +30,15 @@ targets:
         DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER: NO
         # Agent-style: Dock/app-switcher stay clear; macOSBridge owns the menu bar item.
         INFOPLIST_KEY_LSUIElement: YES
+        INFOPLIST_KEY_CFBundleDisplayName: HomeSensorPlot
         INFOPLIST_KEY_CFBundleIconName: AppIcon
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
-        INFOPLIST_KEY_NSHomeKitUsageDescription: "SensorPlot reads HomeKit sensor data to record, chart, and export environmental metrics."
-        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "SensorPlot uses your location to fetch local outdoor temperature for the Temperature chart."
+        INFOPLIST_KEY_NSHomeKitUsageDescription: "HomeSensorPlot reads HomeKit sensor data to record, chart, and export environmental metrics."
+        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "HomeSensorPlot uses your location to fetch local outdoor temperature for the Temperature chart."
         INFOPLIST_KEY_NSHumanReadableCopyright: "Copyright © Cayla"
-        CODE_SIGN_ENTITLEMENTS: SensorPlot/SensorPlot.entitlements
+        CODE_SIGN_ENTITLEMENTS: HomeSensorPlot/HomeSensorPlot.entitlements
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: QR3XWABHT6
         ENABLE_HARDENED_RUNTIME: YES
@@ -46,7 +47,7 @@ targets:
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         SDKROOT: iphoneos
     info:
-      path: SensorPlot/Info.plist
+      path: HomeSensorPlot/Info.plist
       properties:
         # Required to re-open a window after close on Mac Catalyst.
         UIApplicationSceneManifest:
@@ -61,7 +62,7 @@ targets:
       - sdk: HomeKit.framework
       - sdk: CoreLocation.framework
     entitlements:
-      path: SensorPlot/SensorPlot.entitlements
+      path: HomeSensorPlot/HomeSensorPlot.entitlements
       properties:
         com.apple.developer.homekit: true
         com.apple.security.app-sandbox: true
@@ -78,10 +79,10 @@ targets:
       - path: macOSBridge
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.cayla.SensorPlot.macOSBridge
+        PRODUCT_BUNDLE_IDENTIFIER: com.cayla.HomeSensorPlot.macOSBridge
         PRODUCT_NAME: macOSBridge
         MARKETING_VERSION: "0.1.0"
-        CURRENT_PROJECT_VERSION: "4"
+        CURRENT_PROJECT_VERSION: "5"
         INFOPLIST_FILE: macOSBridge/Info.plist
         SKIP_INSTALL: YES
         COMBINE_HIDPI_IMAGES: YES
@@ -90,18 +91,18 @@ targets:
         MACOSX_DEPLOYMENT_TARGET: "14.0"
         SDKROOT: macosx
 
-  SensorPlotTests:
+  HomeSensorPlotTests:
     type: bundle.unit-test
     platform: iOS
     supportedDestinations: [macCatalyst]
     sources:
-      - path: SensorPlotTests
+      - path: HomeSensorPlotTests
     dependencies:
-      - target: SensorPlot
+      - target: HomeSensorPlot
       - sdk: HomeKit.framework
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.cayla.SensorPlotTests
+        PRODUCT_BUNDLE_IDENTIFIER: com.cayla.HomeSensorPlotTests
         GENERATE_INFOPLIST_FILE: YES
         TARGETED_DEVICE_FAMILY: "2"
         SUPPORTS_MACCATALYST: YES

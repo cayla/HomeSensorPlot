@@ -1,6 +1,6 @@
 import HomeKit
 import XCTest
-@testable import SensorPlot
+@testable import HomeSensorPlot
 
 final class SensorCharacteristicClassifierTests: XCTestCase {
     func testKnownTemperature() {

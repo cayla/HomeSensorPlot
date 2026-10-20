@@ -1,5 +1,5 @@
 import XCTest
-@testable import SensorPlot
+@testable import HomeSensorPlot
 
 final class TimeBoxTests: XCTestCase {
     private let now = Date(timeIntervalSince1970: 1_700_000_000)

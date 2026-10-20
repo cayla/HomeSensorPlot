@@ -65,7 +65,7 @@ final class HomeKitSensorProvider: NSObject, ObservableObject {
         homeCount = manager.homes.count
         accessoryCount = manager.homes.reduce(0) { $0 + $1.accessories.count }
         NSLog(
-            "SensorPlot HomeKit: auth=%@ raw=%lu homesLoaded=%d homes=%d accessories=%d",
+            "HomeSensorPlot HomeKit: auth=%@ raw=%lu homesLoaded=%d homes=%d accessories=%d",
             authorizationLabel,
             UInt(status.rawValue),
             homesLoaded ? 1 : 0,
@@ -180,7 +180,7 @@ final class HomeKitSensorProvider: NSObject, ObservableObject {
             guard characteristic.isNotificationEnabled == false else { continue }
             characteristic.enableNotification(true) { error in
                 if let error {
-                    NSLog("SensorPlot: notification enable failed for %@: %@",
+                    NSLog("HomeSensorPlot: notification enable failed for %@: %@",
                           characteristic.characteristicType, error.localizedDescription)
                 }
             }
@@ -194,7 +194,7 @@ final class HomeKitSensorProvider: NSObject, ObservableObject {
                     let message = error.localizedDescription
                     // HAP often rejects reads on write-only / notify-only / media chars — ignore.
                     if !message.localizedCaseInsensitiveContains("not supported") {
-                        NSLog("SensorPlot: read failed for %@: %@",
+                        NSLog("HomeSensorPlot: read failed for %@: %@",
                               characteristic.characteristicType, message)
                     }
                 }

@@ -1,5 +1,5 @@
 import XCTest
-@testable import SensorPlot
+@testable import HomeSensorPlot
 
 final class SampleStoreTests: XCTestCase {
     private var directory: URL!
@@ -7,7 +7,7 @@ final class SampleStoreTests: XCTestCase {
 
     override func setUpWithError() throws {
         directory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("SensorPlotStore-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("HomeSensorPlotStore-\(UUID().uuidString)", isDirectory: true)
         store = try SampleStore(directory: directory)
     }
 

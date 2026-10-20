@@ -42,7 +42,7 @@ final class AppState: ObservableObject {
             self.collector = SensorCollector(store: store, homeKit: homeKit, settings: settings)
             self.exporter = PrometheusExporter(store: store)
         } catch {
-            fatalError("Failed to open SensorPlot store: \(error)")
+            fatalError("Failed to open HomeSensorPlot store: \(error)")
         }
 
         collector.objectWillChange
