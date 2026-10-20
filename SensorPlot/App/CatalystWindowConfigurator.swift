@@ -17,13 +17,28 @@ enum CatalystWindowConfigurator {
     static func configure() {
         allowResizing()
         applyStoredOrDefaultSize()
+        activateMainWindow()
         // Size restrictions / geometry sometimes stick only after the first layout pass.
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
             allowResizing()
             if !didApplyRestoredSize {
                 applyStoredOrDefaultSize()
             }
+            activateMainWindow()
         }
+    }
+
+    /// TestFlight / Finder launches occasionally create the scene without ordering it front.
+    static func activateMainWindow() {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .forEach { scene in
+                scene.windows.forEach { window in
+                    window.makeKeyAndVisible()
+                }
+            }
+        // Request attention without stealing focus from every other app forever.
+        UIApplication.shared.requestSceneSessionActivation(nil, userActivity: nil, options: nil)
     }
 
     static func allowResizing() {

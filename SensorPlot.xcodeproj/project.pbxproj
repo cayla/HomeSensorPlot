@@ -445,7 +445,7 @@
 				CODE_SIGN_ENTITLEMENTS = SensorPlot/SensorPlot.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = NO;
 				DEVELOPMENT_TEAM = QR3XWABHT6;
 				ENABLE_APP_SANDBOX = YES;
@@ -453,7 +453,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleIconName = AppIcon;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_LSUIElement = NO;
 				INFOPLIST_KEY_NSHomeKitUsageDescription = "SensorPlot reads HomeKit sensor data to record, chart, and export environmental metrics.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © Cayla";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "SensorPlot uses your location to fetch local outdoor temperature for the Temperature chart.";
@@ -538,7 +538,7 @@
 				CODE_SIGN_ENTITLEMENTS = SensorPlot/SensorPlot.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = NO;
 				DEVELOPMENT_TEAM = QR3XWABHT6;
 				ENABLE_APP_SANDBOX = YES;
@@ -546,7 +546,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleIconName = AppIcon;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_LSUIElement = NO;
 				INFOPLIST_KEY_NSHomeKitUsageDescription = "SensorPlot reads HomeKit sensor data to record, chart, and export environmental metrics.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © Cayla";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "SensorPlot uses your location to fetch local outdoor temperature for the Temperature chart.";

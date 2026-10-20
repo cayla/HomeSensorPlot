@@ -20,13 +20,15 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.cayla.SensorPlot
         PRODUCT_NAME: SensorPlot
         MARKETING_VERSION: "0.1.0"
-        CURRENT_PROJECT_VERSION: "2"
+        CURRENT_PROJECT_VERSION: "3"
         GENERATE_INFOPLIST_FILE: YES
         TARGETED_DEVICE_FAMILY: "2"
         SUPPORTS_MACCATALYST: YES
         SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
         DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER: NO
-        INFOPLIST_KEY_LSUIElement: YES
+        # Must stay a normal Dock app — LSUIElement made TestFlight launches look "dead"
+        # (HomeKit prompt, then no window / no Dock icon).
+        INFOPLIST_KEY_LSUIElement: NO
         INFOPLIST_KEY_CFBundleIconName: AppIcon
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
         INFOPLIST_KEY_UILaunchScreen_Generation: YES

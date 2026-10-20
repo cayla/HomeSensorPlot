@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Compact status/actions panel shown at the top of the main window.
 /// (Apple marks HomeKit unavailable for native macOS menu-bar apps; this Catalyst build
-/// keeps always-on collection via Open at Login + LSUIElement instead.)
+/// keeps always-on collection via Open at Login instead.)
 struct MenuBarView: View {
     @EnvironmentObject private var appState: AppState
 

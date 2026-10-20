@@ -4,7 +4,7 @@ Always-on Mac app (Mac Catalyst) that discovers HomeKit sensors, stores readings
 
 ## Why Mac Catalyst?
 
-Apple marks the HomeKit framework `API_UNAVAILABLE` for **native** macOS AppKit apps. HomeKit on the Mac is supported via **Mac Catalyst** (and iOS). SensorPlot therefore builds as a Catalyst app so live HomeKit collection works. It runs as an agent-style app (`LSUIElement`) with Open at Login for low-friction always-on use.
+Apple marks the HomeKit framework `API_UNAVAILABLE` for **native** macOS AppKit apps. HomeKit on the Mac is supported via **Mac Catalyst** (and iOS). SensorPlot therefore builds as a Catalyst app so live HomeKit collection works. Use Open at Login if you want collection after reboot.
 
 ## Features
 
