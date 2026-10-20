@@ -9,11 +9,16 @@
 /* Begin PBXBuildFile section */
 		02C54EBF3856EC4648B7A4F6 /* InventoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7AC9EAB2B170F56C7BD19A2 /* InventoryView.swift */; };
 		0352994D473729D84BDD4EB3 /* NumberFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 304E8D892739B82D3452D45F /* NumberFormatting.swift */; };
+		0AFBA884562DD94A10085B96 /* PrometheusListenTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 193B28701B6B700857275182 /* PrometheusListenTests.swift */; };
 		0D2B63DE473B3E7190292A54 /* SeriesDownsampleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F73812BF6D71AD04F4DCFC2F /* SeriesDownsampleTests.swift */; };
+		1ACFE1EEC5D56BD8FAD68B7E /* SampleAcceptanceDebouncerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F5BAF0C3A2D2FD9E6326567 /* SampleAcceptanceDebouncerTests.swift */; };
+		1FB0A66E6521A2BBD0BFF083 /* SensorCollectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CA8A3D9143090C179CCFF0D /* SensorCollectorTests.swift */; };
 		22016087DF64AC4C67A2141C /* SensorCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 039E2641B6CCCFB63B3E7456 /* SensorCategory.swift */; };
 		2AEC0A61FDD284D284556093 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 48FECE09E743B308E1096E7D /* Assets.xcassets */; };
+		30C2B9145782D0705C19563A /* WeatherServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08DFFED7FCBD45A799EF9421 /* WeatherServiceTests.swift */; };
 		3250A0CA09BD3A1CCD913BA2 /* TimeBoxTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F096165DFA235C1D5F68C4AE /* TimeBoxTests.swift */; };
 		3DE231387EB4C1CCA4338A01 /* PrometheusExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D19F5DE7431B71719763F43 /* PrometheusExporter.swift */; };
+		484FB0A621C6E1897FC8DE22 /* SampleAcceptanceDebouncer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AE551141290ECA250FBA851 /* SampleAcceptanceDebouncer.swift */; };
 		4FC69604559FD08A4ADDECE1 /* MacOSController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E699970A9A46ECDFF18F809 /* MacOSController.swift */; };
 		4FFFC5CFE63534BE94B48857 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA7A26FEFAF4613039122C24 /* ContentView.swift */; };
 		5FFA9D9E122562D4DB12E85B /* BridgeProtocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0723E0240EB43E9838460A6A /* BridgeProtocols.swift */; };
@@ -42,6 +47,7 @@
 		C18D8547D7325DDA9D700C00 /* SensorCategoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1A505072F3ECE82B54CA099 /* SensorCategoryTests.swift */; };
 		C79AD5A7F1EE036395ECAFB3 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4D9210325A3C2ECA48D2BC1 /* AppState.swift */; };
 		D68940503ACD986BAFC8CC75 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 41012E5B1FF58DE7E653AFA8 /* PrivacyInfo.xcprivacy */; };
+		DB0DB848FD4909227DD75993 /* HomeKitSensorProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AA8C223A8A954DBEA3B99FB /* HomeKitSensorProviderTests.swift */; };
 		DC2153BDE961AF91EC76E7D8 /* SeriesDownsample.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7116E34A12D69694A7685B4 /* SeriesDownsample.swift */; };
 		E37DF75AA491DEF7F54B7A07 /* CoreLocation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C7B9F9A1A2DFE619EB007295 /* CoreLocation.framework */; };
 		EA511ADD0A36C7E4D5A07AD2 /* HomeKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 499D2B9164A259C18533A50C /* HomeKit.framework */; };
@@ -72,7 +78,10 @@
 		0469B76A2CCDDE43945491C4 /* SampleStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleStoreTests.swift; sourceTree = "<group>"; };
 		071664DB7C7CA0BB07F11014 /* CatalystWindowConfigurator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatalystWindowConfigurator.swift; sourceTree = "<group>"; };
 		0723E0240EB43E9838460A6A /* BridgeProtocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeProtocols.swift; sourceTree = "<group>"; };
+		08DFFED7FCBD45A799EF9421 /* WeatherServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherServiceTests.swift; sourceTree = "<group>"; };
 		0E699970A9A46ECDFF18F809 /* MacOSController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacOSController.swift; sourceTree = "<group>"; };
+		193B28701B6B700857275182 /* PrometheusListenTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrometheusListenTests.swift; sourceTree = "<group>"; };
+		1AA8C223A8A954DBEA3B99FB /* HomeKitSensorProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeKitSensorProviderTests.swift; sourceTree = "<group>"; };
 		1D600FCC5AB1212158670623 /* SampleStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleStore.swift; sourceTree = "<group>"; };
 		20D353000D2FAFCC09FDBC3D /* MenuBarNotifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarNotifications.swift; sourceTree = "<group>"; };
 		28AB67D4A25EF6EE6927552E /* HomeSensorPlot.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = HomeSensorPlot.entitlements; sourceTree = "<group>"; };
@@ -87,10 +96,13 @@
 		51687605E5D8F6169C69A9EA /* HomeSensorPlotTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = HomeSensorPlotTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		5DEA76C598EB38E6EEE0763B /* MockSensorSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockSensorSeeder.swift; sourceTree = "<group>"; };
 		6CA5C35AF2965336DCDD3028 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		6CA8A3D9143090C179CCFF0D /* SensorCollectorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SensorCollectorTests.swift; sourceTree = "<group>"; };
 		71E4A12ED6696B5025DEF8D7 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		88E50A333C93088DC2C0BABE /* MacOSPluginLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacOSPluginLoader.swift; sourceTree = "<group>"; };
+		8AE551141290ECA250FBA851 /* SampleAcceptanceDebouncer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleAcceptanceDebouncer.swift; sourceTree = "<group>"; };
 		939B546DAAE8AACD22D66FAC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		9F31156F2434438F0409C9D0 /* HomeSensorPlot.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = HomeSensorPlot.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		9F5BAF0C3A2D2FD9E6326567 /* SampleAcceptanceDebouncerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleAcceptanceDebouncerTests.swift; sourceTree = "<group>"; };
 		A1A505072F3ECE82B54CA099 /* SensorCategoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SensorCategoryTests.swift; sourceTree = "<group>"; };
 		A7116E34A12D69694A7685B4 /* SeriesDownsample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeriesDownsample.swift; sourceTree = "<group>"; };
 		AA7A26FEFAF4613039122C24 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -209,6 +221,7 @@
 				FE0464EE8A462254AC1B50C6 /* LoginItemManager.swift */,
 				465BB5F1F6FA295F2B7CBDC1 /* Models.swift */,
 				304E8D892739B82D3452D45F /* NumberFormatting.swift */,
+				8AE551141290ECA250FBA851 /* SampleAcceptanceDebouncer.swift */,
 				039E2641B6CCCFB63B3E7456 /* SensorCategory.swift */,
 				A7116E34A12D69694A7685B4 /* SeriesDownsample.swift */,
 				AB236A5891BB77664A8C5B85 /* TemperatureUnit.swift */,
@@ -260,14 +273,19 @@
 		E7D12963FBED19FD7199D4A4 /* HomeSensorPlotTests */ = {
 			isa = PBXGroup;
 			children = (
+				1AA8C223A8A954DBEA3B99FB /* HomeKitSensorProviderTests.swift */,
 				CB0004CB8AF47E70807E29AA /* NumberFormattingTests.swift */,
 				E44D309DDC4EDD6B7EB4849A /* PrometheusExporterTests.swift */,
+				193B28701B6B700857275182 /* PrometheusListenTests.swift */,
+				9F5BAF0C3A2D2FD9E6326567 /* SampleAcceptanceDebouncerTests.swift */,
 				0469B76A2CCDDE43945491C4 /* SampleStoreTests.swift */,
 				A1A505072F3ECE82B54CA099 /* SensorCategoryTests.swift */,
 				43A4511565F566E5FFC7D48C /* SensorCharacteristicClassifierTests.swift */,
+				6CA8A3D9143090C179CCFF0D /* SensorCollectorTests.swift */,
 				F73812BF6D71AD04F4DCFC2F /* SeriesDownsampleTests.swift */,
 				E77DC5F7512391C483659523 /* TemperatureUnitTests.swift */,
 				F096165DFA235C1D5F68C4AE /* TimeBoxTests.swift */,
+				08DFFED7FCBD45A799EF9421 /* WeatherServiceTests.swift */,
 			);
 			path = HomeSensorPlotTests;
 			sourceTree = "<group>";
@@ -436,6 +454,7 @@
 				FE825DDFDFAC82C1C0A5FCF5 /* Models.swift in Sources */,
 				0352994D473729D84BDD4EB3 /* NumberFormatting.swift in Sources */,
 				3DE231387EB4C1CCA4338A01 /* PrometheusExporter.swift in Sources */,
+				484FB0A621C6E1897FC8DE22 /* SampleAcceptanceDebouncer.swift in Sources */,
 				FE39BE6CBAC0B618B39014FC /* SampleStore.swift in Sources */,
 				22016087DF64AC4C67A2141C /* SensorCategory.swift in Sources */,
 				8DDADC3C41D628E2C0277889 /* SensorCharacteristicClassifier.swift in Sources */,
@@ -451,14 +470,19 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DB0DB848FD4909227DD75993 /* HomeKitSensorProviderTests.swift in Sources */,
 				602F9187C6C24B311F0CD8CD /* NumberFormattingTests.swift in Sources */,
 				635C068C76CD1E6AD1C65E3F /* PrometheusExporterTests.swift in Sources */,
+				0AFBA884562DD94A10085B96 /* PrometheusListenTests.swift in Sources */,
+				1ACFE1EEC5D56BD8FAD68B7E /* SampleAcceptanceDebouncerTests.swift in Sources */,
 				6C42E7C50ED22B363CECEB5D /* SampleStoreTests.swift in Sources */,
 				C18D8547D7325DDA9D700C00 /* SensorCategoryTests.swift in Sources */,
 				653BF1F449611EAF8F82EBF8 /* SensorCharacteristicClassifierTests.swift in Sources */,
+				1FB0A66E6521A2BBD0BFF083 /* SensorCollectorTests.swift in Sources */,
 				0D2B63DE473B3E7190292A54 /* SeriesDownsampleTests.swift in Sources */,
 				812CBA823F1CA092B2789E64 /* TemperatureUnitTests.swift in Sources */,
 				3250A0CA09BD3A1CCD913BA2 /* TimeBoxTests.swift in Sources */,
+				30C2B9145782D0705C19563A /* WeatherServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -485,7 +509,7 @@
 				CODE_SIGN_ENTITLEMENTS = HomeSensorPlot/HomeSensorPlot.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 8;
+				CURRENT_PROJECT_VERSION = 9;
 				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = NO;
 				DEVELOPMENT_TEAM = QR3XWABHT6;
 				ENABLE_APP_SANDBOX = YES;
@@ -548,7 +572,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 8;
+				CURRENT_PROJECT_VERSION = 9;
 				DEVELOPMENT_TEAM = QR3XWABHT6;
 				INFOPLIST_FILE = macOSBridge/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -571,7 +595,7 @@
 				CODE_SIGN_ENTITLEMENTS = HomeSensorPlot/HomeSensorPlot.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 8;
+				CURRENT_PROJECT_VERSION = 9;
 				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = NO;
 				DEVELOPMENT_TEAM = QR3XWABHT6;
 				ENABLE_APP_SANDBOX = YES;
@@ -729,7 +753,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 8;
+				CURRENT_PROJECT_VERSION = 9;
 				DEVELOPMENT_TEAM = QR3XWABHT6;
 				INFOPLIST_FILE = macOSBridge/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
