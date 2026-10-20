@@ -40,6 +40,7 @@
 		BD23E2B633D9A23D0A7EFB2A /* SensorCharacteristicClassifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18A258736B5A2E745C57A6B7 /* SensorCharacteristicClassifierTests.swift */; };
 		BD8E56981CF652E0458D8882 /* SensorCategoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C78D0200158FE12B0E9B8509 /* SensorCategoryTests.swift */; };
 		BF6A15093110AB8A4B9E0653 /* InventoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6279C96772AD2CD54AC86816 /* InventoryView.swift */; };
+		D0E77D36C24C13DBB9D1A9C2 /* MenuBarNotifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD3E3F8D9CC155AB27C3091A /* MenuBarNotifications.swift */; };
 		DB9F7903BB8C9710A9CDBED5 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 897ED94B53F3006E9EDA3890 /* SettingsView.swift */; };
 		E80E1FA174D64353B28D7C9B /* SeriesDownsampleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77349E9D43A6C45206FA1EFF /* SeriesDownsampleTests.swift */; };
 		F1EB06126C5A5D9545701806 /* HomeKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B0582D788F5055032D3075F4 /* HomeKit.framework */; };
@@ -106,6 +107,7 @@
 		E9820603D77D5F09EE4878F3 /* MacOSPluginLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacOSPluginLoader.swift; sourceTree = "<group>"; };
 		F4C3DAC4CF1D598ABD6251EF /* NumberFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NumberFormatting.swift; sourceTree = "<group>"; };
 		F7CBADF01F3852C5D5056B8A /* SensorPlotTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SensorPlotTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		FD3E3F8D9CC155AB27C3091A /* MenuBarNotifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarNotifications.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -171,6 +173,7 @@
 			isa = PBXGroup;
 			children = (
 				DACFFB8E2E21BE3E5BEF33B9 /* BridgeProtocols.swift */,
+				FD3E3F8D9CC155AB27C3091A /* MenuBarNotifications.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -433,6 +436,7 @@
 				BF6A15093110AB8A4B9E0653 /* InventoryView.swift in Sources */,
 				A16B1904504EF8793B8DF043 /* LoginItemManager.swift in Sources */,
 				F42D2935C1D6B6F06A5B919B /* MacOSPluginLoader.swift in Sources */,
+				D0E77D36C24C13DBB9D1A9C2 /* MenuBarNotifications.swift in Sources */,
 				806696819B3AF26D5A9B17CB /* MenuBarView.swift in Sources */,
 				FA18870699B2C92E5F680F8C /* MockSensorSeeder.swift in Sources */,
 				49D7A833B4061D74FF64696C /* Models.swift in Sources */,

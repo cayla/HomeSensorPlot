@@ -3,8 +3,7 @@ import Foundation
 #if targetEnvironment(macCatalyst)
 import UIKit
 
-/// Thin proxy so the Catalyst host can talk to the AppKit plugin without sharing a Swift
-/// protocol across module boundaries (that breaks `as?` casts).
+/// Thin proxy so the Catalyst host can push status into the AppKit plugin.
 final class MacOSControllerProxy: NSObject, iOS2Mac {
     private let target: NSObject
 
@@ -19,9 +18,10 @@ final class MacOSControllerProxy: NSObject, iOS2Mac {
         super.init()
     }
 
+    /// Unused — menu actions use NotificationCenter now.
     var iOSBridge: Mac2iOS? {
-        get { target.value(forKey: "iOSBridge") as? Mac2iOS }
-        set { target.setValue(newValue, forKey: "iOSBridge") }
+        get { nil }
+        set {}
     }
 
     func macBridgeUpdateStatus(_ text: String, symbolName: String) {
@@ -37,7 +37,6 @@ final class MacOSControllerProxy: NSObject, iOS2Mac {
     }
 }
 
-/// Loads the native AppKit `macOSBridge.bundle` (status item) into the Catalyst host.
 enum MacOSPluginLoader {
     static func loadController() -> iOS2Mac? {
         let bundleFileName = "macOSBridge.bundle"
@@ -80,52 +79,22 @@ enum MacOSPluginLoader {
             return nil
         }
         let instance = objectType.init()
-        guard let proxy = MacOSControllerProxy(target: instance) else { return nil }
-        return proxy
+        return MacOSControllerProxy(target: instance)
     }
 }
 
-/// ObjC-facing host that the menu bar plugin calls into (calls hop to the main actor).
-final class MacBridgeHost: NSObject, Mac2iOS {
-    private weak var appState: AppState?
-
-    init(appState: AppState) {
-        self.appState = appState
-        super.init()
-    }
-
-    @objc func macBridgeForceCollect() {
-        Task { @MainActor in
-            guard let appState else { return }
-            await appState.collector.forceCollectOnce()
-            await appState.refreshUI()
-            appState.pushStatusToMacBridge()
-        }
-    }
-
-    @objc func macBridgeShowWindow() {
-        Task { @MainActor in
-            CatalystWindowConfigurator.showMainWindow()
-        }
-    }
-
-    @objc func macBridgeQuit() {
-        Task { @MainActor in
-            appState?.stop()
-            exit(0)
-        }
-    }
-}
-
-/// Owns the loaded plugin for the life of the process.
+/// Owns the loaded plugin and menu-bar notification observers.
 enum MacOSPluginBootstrap {
     private(set) static var controller: iOS2Mac?
-    private static var host: MacBridgeHost?
     private(set) static var didLoad = false
+    private static var observers: [NSObjectProtocol] = []
+    private static weak var appState: AppState?
 
     @MainActor
     @discardableResult
     static func start(appState: AppState) -> Bool {
+        self.appState = appState
+
         if controller == nil {
             guard let loaded = MacOSPluginLoader.loadController() else {
                 didLoad = false
@@ -133,13 +102,56 @@ enum MacOSPluginBootstrap {
             }
             controller = loaded
             didLoad = true
+            installMenuObservers()
             NSLog("SensorPlot: macOSBridge status item ready")
         }
-        let host = MacBridgeHost(appState: appState)
-        self.host = host
-        controller?.iOSBridge = host
+
         appState.pushStatusToMacBridge()
         return didLoad
+    }
+
+    @MainActor
+    private static func installMenuObservers() {
+        guard observers.isEmpty else { return }
+
+        observers.append(
+            NotificationCenter.default.addObserver(
+                forName: MenuBarNotifications.openWindow,
+                object: nil,
+                queue: .main
+            ) { _ in
+                NSLog("SensorPlot: menu Open SensorPlot")
+                CatalystWindowConfigurator.showMainWindow()
+            }
+        )
+
+        observers.append(
+            NotificationCenter.default.addObserver(
+                forName: MenuBarNotifications.collectNow,
+                object: nil,
+                queue: .main
+            ) { _ in
+                Task { @MainActor in
+                    guard let appState else { return }
+                    await appState.collector.forceCollectOnce()
+                    await appState.refreshUI()
+                    appState.pushStatusToMacBridge()
+                }
+            }
+        )
+
+        observers.append(
+            NotificationCenter.default.addObserver(
+                forName: MenuBarNotifications.quit,
+                object: nil,
+                queue: .main
+            ) { _ in
+                Task { @MainActor in
+                    appState?.stop()
+                    exit(0)
+                }
+            }
+        )
     }
 }
 #endif

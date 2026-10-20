@@ -2,7 +2,7 @@ import AppKit
 import Foundation
 
 /// Native macOS plugin entry point — owns the menu bar status item.
-/// Speaks to the Catalyst host via @objc selectors (no shared Swift protocol module).
+/// Speaks to the Catalyst host via NotificationCenter (reliable across the bundle boundary).
 @objc(MacOSController)
 public final class MacOSController: NSObject, NSMenuDelegate {
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -10,8 +10,9 @@ public final class MacOSController: NSObject, NSMenuDelegate {
     private let statusMenuItem = NSMenuItem(title: "Starting…", action: nil, keyEquivalent: "")
     private let exporterMenuItem = NSMenuItem(title: "Exporter —", action: nil, keyEquivalent: "")
 
-    /// Catalyst `MacBridgeHost` (Mac2iOS). Kept as AnyObject so this bundle stays AppKit-only.
-    @objc public weak var iOSBridge: AnyObject?
+    private let openWindowNotification = Notification.Name("com.cayla.SensorPlot.menu.openWindow")
+    private let collectNowNotification = Notification.Name("com.cayla.SensorPlot.menu.collectNow")
+    private let quitNotification = Notification.Name("com.cayla.SensorPlot.menu.quit")
 
     @objc public required override init() {
         super.init()
@@ -75,14 +76,15 @@ public final class MacOSController: NSObject, NSMenuDelegate {
     }
 
     @objc private func openWindow() {
-        _ = iOSBridge?.perform(NSSelectorFromString("macBridgeShowWindow"))
+        NSApp.activate(ignoringOtherApps: true)
+        NotificationCenter.default.post(name: openWindowNotification, object: nil)
     }
 
     @objc private func collectNow() {
-        _ = iOSBridge?.perform(NSSelectorFromString("macBridgeForceCollect"))
+        NotificationCenter.default.post(name: collectNowNotification, object: nil)
     }
 
     @objc private func quit() {
-        _ = iOSBridge?.perform(NSSelectorFromString("macBridgeQuit"))
+        NotificationCenter.default.post(name: quitNotification, object: nil)
     }
 }

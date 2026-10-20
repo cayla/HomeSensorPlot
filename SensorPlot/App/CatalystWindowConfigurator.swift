@@ -37,22 +37,50 @@ enum CatalystWindowConfigurator {
         }
     }
 
-    /// Menu bar → Open SensorPlot.
+    /// Menu bar → Open SensorPlot (works even after the window was closed).
     static func showMainWindow() {
         didApplyRestoredSize = false
         let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
-        if let session = scenes.first?.session {
-            for window in scenes.first?.windows ?? [] {
+        NSLog("SensorPlot: showMainWindow — %d scene(s)", scenes.count)
+
+        if let scene = scenes.first {
+            for window in scene.windows {
                 window.isHidden = false
                 window.makeKeyAndVisible()
             }
-            UIApplication.shared.requestSceneSessionActivation(session, userActivity: nil, options: nil)
+            UIApplication.shared.requestSceneSessionActivation(
+                scene.session,
+                userActivity: nil,
+                options: nil
+            ) { error in
+                NSLog("SensorPlot: activate existing scene failed: %@", error.localizedDescription)
+            }
             configure()
             return
         }
-        UIApplication.shared.requestSceneSessionActivation(nil, userActivity: nil, options: nil)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-            configure()
+
+        // Prefer SwiftUI openWindow if we still have a registrar from a prior scene.
+        if let openMain = WindowOpenRegistrarStore.openMain {
+            NSLog("SensorPlot: showMainWindow via openWindow(id:)")
+            openMain()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: configure)
+            return
+        }
+
+        let activity = NSUserActivity(activityType: "com.cayla.SensorPlot.openMainWindow")
+        UIApplication.shared.requestSceneSessionActivation(
+            nil,
+            userActivity: activity,
+            options: nil
+        ) { error in
+            NSLog("SensorPlot: create scene failed: %@", error.localizedDescription)
+        }
+        for delay in [0.15, 0.4, 0.8] {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                if !UIApplication.shared.connectedScenes.isEmpty {
+                    configure()
+                }
+            }
         }
     }
 

@@ -7,9 +7,5 @@ import Foundation
     func macBridgeUpdateExporter(_ address: String)
 }
 
-/// macOS plugin → Catalyst host. Implemented by `MacBridgeHost`.
-@objc public protocol Mac2iOS: NSObjectProtocol {
-    func macBridgeForceCollect()
-    func macBridgeShowWindow()
-    func macBridgeQuit()
-}
+/// Kept for status push typing; menu actions use `MenuBarNotifications` now.
+@objc public protocol Mac2iOS: NSObjectProtocol {}

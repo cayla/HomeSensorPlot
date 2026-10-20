@@ -7,34 +7,27 @@ struct SensorPlotApp: App {
     init() {
         let state = AppState()
         _appState = StateObject(wrappedValue: state)
-        // Kick collection/menu bar immediately; window lifecycle is separate.
         Task { @MainActor in
             state.start()
             #if targetEnvironment(macCatalyst)
-            _ = MacOSPluginBootstrap.start(appState: state)
+            if !MacOSPluginBootstrap.start(appState: state) {
+                state.lastRefreshError =
+                    "Menu bar plugin failed to load — check that macOSBridge.bundle is embedded."
+            }
             #endif
         }
     }
 
     var body: some Scene {
-        WindowGroup("SensorPlot") {
+        // Named id so we can re-open after the user closes the window.
+        WindowGroup("SensorPlot", id: "main") {
             ContentView()
                 .environmentObject(appState)
                 #if targetEnvironment(macCatalyst)
                 .background(CatalystWindowSizeObserver())
+                .background(WindowOpenRegistrar())
                 .onAppear {
-                    Task { @MainActor in
-                        appState.start()
-                        let pluginOK = MacOSPluginBootstrap.start(appState: appState)
-                        if pluginOK {
-                            // Destroy the scene — do not isHidden (that leaves blank chrome).
-                            CatalystWindowConfigurator.dismissMainWindows()
-                        } else {
-                            appState.lastRefreshError =
-                                "Menu bar plugin failed to load — window kept visible for debugging."
-                            CatalystWindowConfigurator.configure()
-                        }
-                    }
+                    CatalystWindowConfigurator.configure()
                 }
                 #endif
         }
@@ -43,3 +36,24 @@ struct SensorPlotApp: App {
         #endif
     }
 }
+
+#if targetEnvironment(macCatalyst)
+/// Captures SwiftUI `openWindow` while a scene exists; used as a reopen fallback.
+enum WindowOpenRegistrarStore {
+    nonisolated(unsafe) static var openMain: (() -> Void)?
+}
+
+private struct WindowOpenRegistrar: View {
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some View {
+        Color.clear
+            .frame(width: 0, height: 0)
+            .onAppear {
+                WindowOpenRegistrarStore.openMain = {
+                    openWindow(id: "main")
+                }
+            }
+    }
+}
+#endif

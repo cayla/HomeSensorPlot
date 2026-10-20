@@ -67,8 +67,7 @@ targets:
     type: bundle
     platform: macOS
     sources:
-      # AppKit-only — do not compile Shared protocols here (cross-module Swift
-      # protocol casts break plugin loading). Talk via @objc selectors instead.
+      # AppKit-only — talk via NotificationCenter / @objc selectors, not Shared Swift protocols.
       - path: macOSBridge
     settings:
       base:
