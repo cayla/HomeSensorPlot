@@ -26,6 +26,75 @@ enum CatalystWindowConfigurator {
         }
     }
 
+    /// Fully tear down Catalyst window scenes. Prefer this over `isHidden` — hiding
+    /// leaves a blank chrome on Mac Catalyst (paint → empty frame).
+    static func dismissMainWindows() {
+        let sessions = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .map(\.session)
+        for session in sessions {
+            UIApplication.shared.requestSceneSessionDestruction(session, options: nil)
+        }
+    }
+
+    /// Menu bar → Open SensorPlot (works even after the window was closed).
+    static func showMainWindow() {
+        didApplyRestoredSize = false
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        NSLog(
+            "SensorPlot: showMainWindow — %d scene(s), %d window(s)",
+            scenes.count,
+            scenes.reduce(0) { $0 + $1.windows.count }
+        )
+
+        // 1) SwiftUI reopen (best after the user closed the window).
+        if let openMain = WindowOpenRegistrarStore.openMain {
+            NSLog("SensorPlot: showMainWindow via openWindow(id: main)")
+            openMain()
+        }
+
+        // 2) Surface any existing UIWindows. Do NOT call requestSceneSessionActivation
+        //    on an existing session when SupportsMultipleScenes was false — that errors with
+        //    "application does not support multiple scenes" even for the same session.
+        if revealAllWindows() {
+            configure()
+            return
+        }
+
+        // 3) No live windows — ask UIKit for a new scene (needs SupportsMultipleScenes).
+        NSLog("SensorPlot: showMainWindow creating a new scene session")
+        let activity = NSUserActivity(activityType: "com.cayla.SensorPlot.openMainWindow")
+        UIApplication.shared.requestSceneSessionActivation(
+            nil,
+            userActivity: activity,
+            options: nil
+        ) { error in
+            NSLog("SensorPlot: create scene failed: %@", error.localizedDescription)
+        }
+        for delay in [0.15, 0.4, 0.8, 1.2] {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                if revealAllWindows() {
+                    configure()
+                }
+            }
+        }
+    }
+
+    @discardableResult
+    private static func revealAllWindows() -> Bool {
+        var found = false
+        for scene in UIApplication.shared.connectedScenes {
+            guard let windowScene = scene as? UIWindowScene else { continue }
+            for window in windowScene.windows {
+                found = true
+                window.isHidden = false
+                window.alpha = 1
+                window.makeKeyAndVisible()
+            }
+        }
+        return found
+    }
+
     static func allowResizing() {
         for scene in UIApplication.shared.connectedScenes {
             guard let windowScene = scene as? UIWindowScene else { continue }

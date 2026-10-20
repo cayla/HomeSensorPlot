@@ -2,24 +2,58 @@ import SwiftUI
 
 @main
 struct SensorPlotApp: App {
-    @StateObject private var appState = AppState()
+    @StateObject private var appState: AppState
+
+    init() {
+        let state = AppState()
+        _appState = StateObject(wrappedValue: state)
+        Task { @MainActor in
+            state.start()
+            #if targetEnvironment(macCatalyst)
+            if !MacOSPluginBootstrap.start(appState: state) {
+                state.lastRefreshError =
+                    "Menu bar plugin failed to load — check that macOSBridge.bundle is embedded."
+            }
+            #endif
+        }
+    }
 
     var body: some Scene {
-        WindowGroup("SensorPlot") {
+        // Named id so we can re-open after the user closes the window.
+        WindowGroup("SensorPlot", id: "main") {
             ContentView()
                 .environmentObject(appState)
                 #if targetEnvironment(macCatalyst)
                 .background(CatalystWindowSizeObserver())
-                #endif
+                .background(WindowOpenRegistrar())
                 .onAppear {
-                    appState.start()
-                    #if targetEnvironment(macCatalyst)
                     CatalystWindowConfigurator.configure()
-                    #endif
                 }
+                #endif
         }
         #if targetEnvironment(macCatalyst)
         .defaultSize(width: 1280, height: 860)
         #endif
     }
 }
+
+#if targetEnvironment(macCatalyst)
+/// Captures SwiftUI `openWindow` while a scene exists; used as a reopen fallback.
+enum WindowOpenRegistrarStore {
+    nonisolated(unsafe) static var openMain: (() -> Void)?
+}
+
+private struct WindowOpenRegistrar: View {
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some View {
+        Color.clear
+            .frame(width: 0, height: 0)
+            .onAppear {
+                WindowOpenRegistrarStore.openMain = {
+                    openWindow(id: "main")
+                }
+            }
+    }
+}
+#endif
