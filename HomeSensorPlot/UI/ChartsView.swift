@@ -246,6 +246,7 @@ private struct CategoryDetailView: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Outdoor (weather)")
                                     .font(.caption.weight(.semibold))
+                                    .foregroundStyle(outdoorNameColor)
                                 Text(outdoorSubtitle)
                                     .font(.caption2)
                                     .foregroundStyle(.secondary)
@@ -269,6 +270,7 @@ private struct CategoryDetailView: View {
                                 Text(sensor.accessoryName)
                                     .font(.caption.weight(.semibold))
                                     .lineLimit(2)
+                                    .foregroundStyle(nameColor(for: sensor))
                                 Text(sensor.roomName.isEmpty ? sensor.homeName : sensor.roomName)
                                     .font(.caption2)
                                     .foregroundStyle(.secondary)
@@ -329,7 +331,10 @@ private struct CategoryDetailView: View {
                                 .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
                         }
                     }
-                    .chartForegroundStyleScale(domain: seriesLabels, range: chartColors)
+                    .chartForegroundStyleScale(
+                        domain: seriesLabels,
+                        range: seriesLabels.map { stableColor(for: $0) }
+                    )
                     .chartYScale(domain: yAxisDomain)
                     .chartLegend(.hidden)
                     .chartXAxis {
@@ -537,9 +542,33 @@ private struct CategoryDetailView: View {
         return (minV - pad)...(maxV + pad)
     }
 
+    /// Accessory name only. Off, or no samples in range, stays gray.
+    private func nameColor(for sensor: SensorRecord) -> Color {
+        guard appState.categoryEnabledSensorIDs.contains(sensor.id),
+              let label = enabledPoints.first(where: { $0.sensorID == sensor.id })?.label
+        else { return .secondary }
+        return stableColor(for: label)
+    }
+
+    private var outdoorNameColor: Color {
+        guard appState.outdoorChartEnabled,
+              let label = enabledPoints.first(where: { $0.sensorID == AppState.outdoorWeatherSeriesID })?.label
+        else { return .secondary }
+        return stableColor(for: label)
+    }
+
     private func color(for label: String) -> Color {
-        guard let index = seriesLabels.firstIndex(of: label) else { return .secondary }
-        return chartColors[index % chartColors.count]
+        guard seriesLabels.contains(label) else { return .secondary }
+        return stableColor(for: label)
+    }
+
+    /// Pinned to the series label so toggling another sensor does not reshuffle colors.
+    private func stableColor(for label: String) -> Color {
+        var hash: UInt32 = 2166136261
+        for byte in label.utf8 {
+            hash = (hash ^ UInt32(byte)) &* 16777619
+        }
+        return chartColors[Int(hash % UInt32(chartColors.count))]
     }
 
     private func rebuildIndex() {
