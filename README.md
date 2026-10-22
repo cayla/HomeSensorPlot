@@ -2,6 +2,8 @@
 
 Always-on Mac app (Mac Catalyst) that discovers HomeKit sensors, stores readings locally, charts them with time ranges, and optionally exposes a localhost Prometheus exporter.
 
+This is an AI authoried app. I work in software engineering and I think the quality is good enough for many use cases. This project is to scratch a personal itch. I make it available in case anyone else would appreciate it.
+
 ## Why Mac Catalyst?
 
 Apple marks the HomeKit framework `API_UNAVAILABLE` for **native** macOS AppKit apps. HomeSensorPlot is a **Mac Catalyst** host (HomeKit + charts) plus a small native **`macOSBridge`** plugin that owns the menu bar status item — same split [ItsyHome](https://github.com/nickustinov/itsyhome-macos) uses. The window stays hidden until you choose **Open HomeSensorPlot** from the menu bar. Enable Open at Login to keep collecting after reboot.
