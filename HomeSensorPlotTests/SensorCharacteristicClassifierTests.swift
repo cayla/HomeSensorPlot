@@ -35,4 +35,15 @@ final class SensorCharacteristicClassifierTests: XCTestCase {
     func testUnknownTypeReturnsNil() {
         XCTAssertNil(SensorCharacteristicClassifier.classify(characteristicType: "not-a-real-type"))
     }
+
+    func testEveryKnownMetricIsChartedOrInventoryOnly() {
+        let known = Set(SensorCharacteristicClassifier.knownMetrics.map(\.metricName))
+        let charted = Set(SensorCategory.allCases.flatMap(\.metricNames))
+        XCTAssertEqual(
+            known.subtracting(charted),
+            SensorCategory.inventoryOnlyMetricNames
+        )
+        XCTAssertTrue(charted.isDisjoint(with: SensorCategory.inventoryOnlyMetricNames))
+        XCTAssertEqual(known.union(charted), known)
+    }
 }

@@ -6,12 +6,16 @@ final class SensorCollectorTests: XCTestCase {
     private var directory: URL!
     private var store: SampleStore!
     private var settings: AppSettings!
+    private var defaultsSuite: String!
 
     override func setUpWithError() throws {
         directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("HomeSensorPlotCollector-\(UUID().uuidString)", isDirectory: true)
         store = try SampleStore(directory: directory)
-        settings = AppSettings()
+        defaultsSuite = "HomeSensorPlotTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: defaultsSuite)!
+        defaults.removePersistentDomain(forName: defaultsSuite)
+        settings = AppSettings(defaults: defaults)
         settings.useMockData = true
         settings.collectUnknownCharacteristics = false
     }
@@ -19,6 +23,10 @@ final class SensorCollectorTests: XCTestCase {
     override func tearDownWithError() throws {
         store = nil
         settings = nil
+        if let defaultsSuite {
+            UserDefaults(suiteName: defaultsSuite)?.removePersistentDomain(forName: defaultsSuite)
+        }
+        defaultsSuite = nil
         if let directory {
             try? FileManager.default.removeItem(at: directory)
         }
@@ -55,19 +63,22 @@ final class SensorCollectorTests: XCTestCase {
     func testForceCollectOnceReturnsFalseWhenBusy() async throws {
         let homeKit = HomeKitSensorProvider()
         let collector = SensorCollector(store: store, homeKit: homeKit, settings: settings)
+        collector.suspendCollectForTesting = true
+        defer { collector.resumeCollectHoldForTesting() }
 
-        async let first = collector.forceCollectOnce()
-        // Second call while the first (hopefully) still holds collectInFlight.
-        let second = await collector.forceCollectOnce()
-        let firstResult = await first
-
-        XCTAssertTrue(firstResult)
-        // If the first finished before the second started, busy-skip may not trigger.
-        // Accept either outcome but require at least one successful collect.
-        if second {
-            XCTAssertFalse(try store.sensors(mockOnly: true).isEmpty)
-        } else {
-            XCTAssertTrue(firstResult)
+        let first = Task { await collector.forceCollectOnce() }
+        let deadline = Date().addingTimeInterval(2)
+        while !collector.isCollecting, Date() < deadline {
+            await Task.yield()
         }
+        XCTAssertTrue(collector.isCollecting)
+
+        let second = await collector.forceCollectOnce()
+        XCTAssertFalse(second)
+
+        collector.resumeCollectHoldForTesting()
+        let firstResult = await first.value
+        XCTAssertTrue(firstResult)
+        XCTAssertFalse(try store.sensors(mockOnly: true).isEmpty)
     }
 }

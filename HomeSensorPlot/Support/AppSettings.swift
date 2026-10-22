@@ -14,51 +14,53 @@ final class AppSettings: ObservableObject {
         static let allowIPGeolocationFallback = "allowIPGeolocationFallback"
     }
 
+    private let defaults: UserDefaults
+
     /// Off by default — localhost Prometheus scrape is opt-in (App Store / review-friendly).
     @Published var exporterEnabled: Bool {
-        didSet { UserDefaults.standard.set(exporterEnabled, forKey: Keys.exporterEnabled) }
+        didSet { defaults.set(exporterEnabled, forKey: Keys.exporterEnabled) }
     }
 
     @Published var exporterPort: Int {
-        didSet { UserDefaults.standard.set(exporterPort, forKey: Keys.exporterPort) }
+        didSet { defaults.set(exporterPort, forKey: Keys.exporterPort) }
     }
 
     @Published var retentionDays: Int {
-        didSet { UserDefaults.standard.set(retentionDays, forKey: Keys.retentionDays) }
+        didSet { defaults.set(retentionDays, forKey: Keys.retentionDays) }
     }
 
     /// When true (default until HomeKit works), seed and refresh mock sensors.
     @Published var useMockData: Bool {
-        didSet { UserDefaults.standard.set(useMockData, forKey: Keys.useMockData) }
+        didSet { defaults.set(useMockData, forKey: Keys.useMockData) }
     }
 
     @Published var scrapeIntervalSeconds: Int {
-        didSet { UserDefaults.standard.set(scrapeIntervalSeconds, forKey: Keys.scrapeIntervalSeconds) }
+        didSet { defaults.set(scrapeIntervalSeconds, forKey: Keys.scrapeIntervalSeconds) }
     }
 
     /// Display preference only — storage and /metrics stay in Celsius.
     @Published var temperatureUnit: TemperatureUnit {
-        didSet { UserDefaults.standard.set(temperatureUnit.rawValue, forKey: Keys.temperatureUnit) }
+        didSet { defaults.set(temperatureUnit.rawValue, forKey: Keys.temperatureUnit) }
     }
 
     /// When false (default), skip HAP `homekit_auto_*` noise and keep only known sensor types.
     @Published var collectUnknownCharacteristics: Bool {
-        didSet { UserDefaults.standard.set(collectUnknownCharacteristics, forKey: Keys.collectUnknownCharacteristics) }
+        didSet { defaults.set(collectUnknownCharacteristics, forKey: Keys.collectUnknownCharacteristics) }
     }
 
     /// Overlay local outdoor temperature (Open-Meteo) on the Temperature chart.
     @Published var showOutdoorWeather: Bool {
-        didSet { UserDefaults.standard.set(showOutdoorWeather, forKey: Keys.showOutdoorWeather) }
+        didSet { defaults.set(showOutdoorWeather, forKey: Keys.showOutdoorWeather) }
     }
 
     /// When outdoor weather is on and Core Location fails, optionally resolve coords via IP (third party).
     /// Off by default — must be an explicit choice.
     @Published var allowIPGeolocationFallback: Bool {
-        didSet { UserDefaults.standard.set(allowIPGeolocationFallback, forKey: Keys.allowIPGeolocationFallback) }
+        didSet { defaults.set(allowIPGeolocationFallback, forKey: Keys.allowIPGeolocationFallback) }
     }
 
-    init() {
-        let defaults = UserDefaults.standard
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
         if defaults.object(forKey: Keys.exporterEnabled) == nil {
             exporterEnabled = false
         } else {

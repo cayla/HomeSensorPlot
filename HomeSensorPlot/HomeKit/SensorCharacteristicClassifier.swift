@@ -7,63 +7,49 @@ struct ClassifiedCharacteristic: Sendable {
     var autoDiscovered: Bool
 }
 
+struct KnownHomeKitMetric: Equatable {
+    var characteristicType: String
+    var metricName: String
+    var unit: String
+}
+
 enum SensorCharacteristicClassifier {
+    /// Lock state is 0 unsecured, 1 secured, 2 jammed, 3 unknown.
+    /// Air quality (0…5) is inventory-only: a flat “Excellent” line clutters the chart.
+    static let knownMetrics: [KnownHomeKitMetric] = [
+        .init(characteristicType: HMCharacteristicTypeCurrentTemperature, metricName: "homekit_temperature_celsius", unit: "celsius"),
+        .init(characteristicType: HMCharacteristicTypeCurrentRelativeHumidity, metricName: "homekit_humidity_percent", unit: "percent"),
+        .init(characteristicType: HMCharacteristicTypeCurrentLightLevel, metricName: "homekit_light_level_lux", unit: "lux"),
+        .init(characteristicType: HMCharacteristicTypeContactState, metricName: "homekit_contact_open", unit: "bool"),
+        .init(characteristicType: HMCharacteristicTypeCurrentLockMechanismState, metricName: "homekit_lock_secured", unit: "enum"),
+        .init(characteristicType: HMCharacteristicTypeMotionDetected, metricName: "homekit_motion_detected", unit: "bool"),
+        .init(characteristicType: HMCharacteristicTypeOccupancyDetected, metricName: "homekit_occupancy_detected", unit: "bool"),
+        .init(characteristicType: HMCharacteristicTypeAirQuality, metricName: "homekit_air_quality", unit: "enum"),
+        .init(characteristicType: HMCharacteristicTypeFilterLifeLevel, metricName: "homekit_filter_life_percent", unit: "percent"),
+        .init(characteristicType: HMCharacteristicTypeCarbonDioxideLevel, metricName: "homekit_co2_ppm", unit: "ppm"),
+        .init(characteristicType: HMCharacteristicTypeCarbonMonoxideLevel, metricName: "homekit_co_ppm", unit: "ppm"),
+        .init(characteristicType: HMCharacteristicTypeNitrogenDioxideDensity, metricName: "homekit_no2_density", unit: "ug_m3"),
+        .init(characteristicType: HMCharacteristicTypeOzoneDensity, metricName: "homekit_ozone_density", unit: "ug_m3"),
+        .init(characteristicType: HMCharacteristicTypePM2_5Density, metricName: "homekit_pm25_density", unit: "ug_m3"),
+        .init(characteristicType: HMCharacteristicTypePM10Density, metricName: "homekit_pm10_density", unit: "ug_m3"),
+        .init(characteristicType: HMCharacteristicTypeSulphurDioxideDensity, metricName: "homekit_so2_density", unit: "ug_m3"),
+        .init(characteristicType: HMCharacteristicTypeVolatileOrganicCompoundDensity, metricName: "homekit_voc_density", unit: "ug_m3"),
+        .init(characteristicType: HMCharacteristicTypeBatteryLevel, metricName: "homekit_battery_percent", unit: "percent"),
+        .init(characteristicType: HMCharacteristicTypeStatusLowBattery, metricName: "homekit_battery_low", unit: "bool"),
+        .init(characteristicType: HMCharacteristicTypeStatusTampered, metricName: "homekit_tampered", unit: "bool"),
+        .init(characteristicType: HMCharacteristicTypeLeakDetected, metricName: "homekit_leak_detected", unit: "bool"),
+        .init(characteristicType: HMCharacteristicTypeSmokeDetected, metricName: "homekit_smoke_detected", unit: "bool"),
+        .init(characteristicType: HMCharacteristicTypeCarbonDioxideDetected, metricName: "homekit_co2_detected", unit: "bool"),
+        .init(characteristicType: HMCharacteristicTypeCarbonMonoxideDetected, metricName: "homekit_co_detected", unit: "bool"),
+    ]
+
+    private static let knownByType: [String: KnownHomeKitMetric] = {
+        Dictionary(uniqueKeysWithValues: knownMetrics.map { ($0.characteristicType, $0) })
+    }()
+
     static func classify(characteristicType: String) -> ClassifiedCharacteristic? {
-        switch characteristicType {
-        case HMCharacteristicTypeCurrentTemperature:
-            return .init(metricName: "homekit_temperature_celsius", unit: "celsius", autoDiscovered: true)
-        case HMCharacteristicTypeCurrentRelativeHumidity:
-            return .init(metricName: "homekit_humidity_percent", unit: "percent", autoDiscovered: true)
-        case HMCharacteristicTypeCurrentLightLevel:
-            return .init(metricName: "homekit_light_level_lux", unit: "lux", autoDiscovered: true)
-        case HMCharacteristicTypeContactState:
-            return .init(metricName: "homekit_contact_open", unit: "bool", autoDiscovered: true)
-        case HMCharacteristicTypeCurrentLockMechanismState:
-            // HomeKit: 0 unsecured, 1 secured, 2 jammed, 3 unknown.
-            return .init(metricName: "homekit_lock_secured", unit: "enum", autoDiscovered: true)
-        case HMCharacteristicTypeMotionDetected:
-            return .init(metricName: "homekit_motion_detected", unit: "bool", autoDiscovered: true)
-        case HMCharacteristicTypeOccupancyDetected:
-            return .init(metricName: "homekit_occupancy_detected", unit: "bool", autoDiscovered: true)
-        case HMCharacteristicTypeAirQuality:
-            // HAP Air Quality: 0 Unknown … 5 Poor. Flat “Excellent” (1) lines clutter charts —
-            // still collected for /metrics + Inventory; excluded from Air chart metrics.
-            return .init(metricName: "homekit_air_quality", unit: "enum", autoDiscovered: true)
-        case HMCharacteristicTypeFilterLifeLevel:
-            return .init(metricName: "homekit_filter_life_percent", unit: "percent", autoDiscovered: true)
-        case HMCharacteristicTypeCarbonDioxideLevel:
-            return .init(metricName: "homekit_co2_ppm", unit: "ppm", autoDiscovered: true)
-        case HMCharacteristicTypeCarbonMonoxideLevel:
-            return .init(metricName: "homekit_co_ppm", unit: "ppm", autoDiscovered: true)
-        case HMCharacteristicTypeNitrogenDioxideDensity:
-            return .init(metricName: "homekit_no2_density", unit: "ug_m3", autoDiscovered: true)
-        case HMCharacteristicTypeOzoneDensity:
-            return .init(metricName: "homekit_ozone_density", unit: "ug_m3", autoDiscovered: true)
-        case HMCharacteristicTypePM2_5Density:
-            return .init(metricName: "homekit_pm25_density", unit: "ug_m3", autoDiscovered: true)
-        case HMCharacteristicTypePM10Density:
-            return .init(metricName: "homekit_pm10_density", unit: "ug_m3", autoDiscovered: true)
-        case HMCharacteristicTypeSulphurDioxideDensity:
-            return .init(metricName: "homekit_so2_density", unit: "ug_m3", autoDiscovered: true)
-        case HMCharacteristicTypeVolatileOrganicCompoundDensity:
-            return .init(metricName: "homekit_voc_density", unit: "ug_m3", autoDiscovered: true)
-        case HMCharacteristicTypeBatteryLevel:
-            return .init(metricName: "homekit_battery_percent", unit: "percent", autoDiscovered: true)
-        case HMCharacteristicTypeStatusLowBattery:
-            return .init(metricName: "homekit_battery_low", unit: "bool", autoDiscovered: true)
-        case HMCharacteristicTypeStatusTampered:
-            return .init(metricName: "homekit_tampered", unit: "bool", autoDiscovered: true)
-        case HMCharacteristicTypeLeakDetected:
-            return .init(metricName: "homekit_leak_detected", unit: "bool", autoDiscovered: true)
-        case HMCharacteristicTypeSmokeDetected:
-            return .init(metricName: "homekit_smoke_detected", unit: "bool", autoDiscovered: true)
-        case HMCharacteristicTypeCarbonDioxideDetected:
-            return .init(metricName: "homekit_co2_detected", unit: "bool", autoDiscovered: true)
-        case HMCharacteristicTypeCarbonMonoxideDetected:
-            return .init(metricName: "homekit_co_detected", unit: "bool", autoDiscovered: true)
-        default:
-            return nil
-        }
+        guard let known = knownByType[characteristicType] else { return nil }
+        return .init(metricName: known.metricName, unit: known.unit, autoDiscovered: true)
     }
 
     /// Known types always; unknown numeric/bool HAP chars only when `includeUnknown` is true

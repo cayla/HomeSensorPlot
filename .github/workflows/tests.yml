@@ -1,0 +1,26 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  catalyst:
+    # macos-15 still defaults to Xcode 16.4. xcode-27 defaults to 27.0;
+    # 27.1 matches the local toolchain (build 27A9275).
+    runs-on: xcode-27
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode 27.1
+        run: sudo xcode-select -s /Applications/Xcode_27.1.app
+      - name: Mac Catalyst tests
+        run: |
+          set -euo pipefail
+          xcodebuild -version
+          xcodebuild \
+            -scheme HomeSensorPlot \
+            -destination 'platform=macOS,variant=Mac Catalyst' \
+            -quiet \
+            CODE_SIGNING_ALLOWED=NO \
+            test

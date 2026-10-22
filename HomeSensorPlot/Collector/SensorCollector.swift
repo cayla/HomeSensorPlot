@@ -21,6 +21,16 @@ final class SensorCollector: NSObject, ObservableObject {
     /// Latest whole-home rebind outcome, for the support dump.
     private(set) var continuitySummary = "not run yet"
     private var pendingRebindMap: [String: String] = [:]
+    /// Test-only. `collect()` suspends after marking itself in flight until `resumeCollectHoldForTesting()`.
+    var suspendCollectForTesting = false
+    private var collectHold: CheckedContinuation<Void, Never>?
+    private var collectHoldReleasedForTesting = false
+
+    func resumeCollectHoldForTesting() {
+        collectHoldReleasedForTesting = true
+        collectHold?.resume()
+        collectHold = nil
+    }
 
     /// Old sensor id → replacement id from the most recent successful rebind. Consumed by the UI refresh.
     func consumeRebindMap() -> [String: String] {
@@ -91,6 +101,16 @@ final class SensorCollector: NSObject, ObservableObject {
     private func collect() async {
         collectInFlight = true
         defer { collectInFlight = false }
+
+        if suspendCollectForTesting {
+            await withCheckedContinuation { continuation in
+                if collectHoldReleasedForTesting {
+                    continuation.resume()
+                } else {
+                    collectHold = continuation
+                }
+            }
+        }
 
         if settings.useMockData {
             do {

@@ -32,6 +32,7 @@ struct HomeSensorPlotApp: App {
         }
         #if targetEnvironment(macCatalyst)
         .defaultSize(width: 1280, height: 860)
+        .handlesExternalEvents(matching: ["com.cayla.HomeSensorPlot.openMainWindow"])
         #endif
     }
 }
