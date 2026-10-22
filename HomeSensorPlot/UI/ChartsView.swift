@@ -140,7 +140,9 @@ private struct CategoryDetailView: View {
                         Text(box.rawValue).tag(box)
                     }
                 }
-                .frame(width: 120)
+                .pickerStyle(.menu)
+                .labelsHidden()
+                .fixedSize()
             }
 
             if appState.timeBox == .custom {
@@ -321,6 +323,15 @@ private struct CategoryDetailView: View {
                                 dash: item.point.sensorID == AppState.outdoorWeatherSeriesID ? [6, 4] : []
                             ))
                             .opacity(lineOpacity(for: item.point.sensorID))
+                            if item.drawsMarker {
+                                PointMark(
+                                    x: .value("Time", item.point.timestamp),
+                                    y: .value("Value", item.point.value)
+                                )
+                                .foregroundStyle(by: .value("Sensor", item.point.label))
+                                .symbolSize(44)
+                                .opacity(lineOpacity(for: item.point.sensorID))
+                            }
                         }
                         if let selectedTime {
                             RuleMark(x: .value("Selected", selectedTime))
@@ -330,8 +341,9 @@ private struct CategoryDetailView: View {
                     }
                     .chartForegroundStyleScale(
                         domain: seriesLabels,
-                        range: seriesLabels.map { stableColor(for: $0) }
+                        range: seriesLabels.map { paletteColor(for: $0) }
                     )
+                    .chartXScale(domain: xDomain, range: .plotDimension(padding: 0))
                     .chartYScale(domain: yAxisDomain)
                     .chartLegend(.hidden)
                     .chartXAxis {
@@ -488,9 +500,16 @@ private struct CategoryDetailView: View {
         tipPosition = CGPoint(x: tipX, y: tipY)
     }
 
+    /// Preset start through now. The upcoming calendar boundary stays off the axis.
+    private var xDomain: ClosedRange<Date> {
+        appState.timeBox.window(customStart: appState.customStart).plottedDomain()
+    }
+
     /// Percent metrics keep a fixed 0…100 domain; states stay on 0/1; everything else zooms to data.
     private var yAxisDomain: ClosedRange<Double> {
-        ChartAxisKind.of(category).domain(values: enabledPoints.map(\.value))
+        ChartAxisKind.of(category).domain(
+            values: enabledPoints.filter { !$0.isAnchor }.map(\.value)
+        )
     }
 
     private var yAxisMarks: some AxisContent {
@@ -532,23 +551,29 @@ private struct CategoryDetailView: View {
     private var activeColorBySensorID: [String: Color] {
         var colors: [String: Color] = [:]
         for point in enabledPoints where colors[point.sensorID] == nil {
-            colors[point.sensorID] = stableColor(for: point.label)
+            colors[point.sensorID] = paletteColor(for: point.label)
         }
         return colors
     }
 
-    private func color(for label: String) -> Color {
-        guard seriesLabels.contains(label) else { return .secondary }
-        return stableColor(for: label)
+    /// Full category order, so toggling a row does not repaint the others.
+    private var paletteLabels: [String] {
+        var labels = categorySensors.map { category.chartSeriesLabel(for: $0) }
+        if category == .temperature, appState.settings.showOutdoorWeather {
+            labels.append(AppState.outdoorWeatherSeriesLabel)
+        }
+        return Array(Set(labels)).sorted()
     }
 
-    /// Pinned to the series label so toggling another sensor does not reshuffle colors.
-    private func stableColor(for label: String) -> Color {
-        var hash: UInt32 = 2166136261
-        for byte in label.utf8 {
-            hash = (hash ^ UInt32(byte)) &* 16777619
-        }
-        return chartColors[Int(hash % UInt32(chartColors.count))]
+    private func color(for label: String) -> Color {
+        guard seriesLabels.contains(label) else { return .secondary }
+        return paletteColor(for: label)
+    }
+
+    private func paletteColor(for label: String) -> Color {
+        guard let position = paletteLabels.firstIndex(of: label) else { return .secondary }
+        let rgb = ChartPalette.color(atAlphabeticalPosition: position)
+        return Color(red: rgb.red, green: rgb.green, blue: rgb.blue)
     }
 
     private struct SeriesBucket {
@@ -559,6 +584,8 @@ private struct CategoryDetailView: View {
     private struct PlottedPoint: Identifiable {
         var point: ChartSeriesPoint
         var segmentID: String
+        /// A series with one in-window sample. A line needs two points, so the sample is a dot.
+        var drawsMarker: Bool
         var id: String { point.id }
     }
 
@@ -578,6 +605,11 @@ private struct CategoryDetailView: View {
             grouped[point.sensorID, default: []].append(point)
         }
 
+        var visibleCount: [String: Int] = [:]
+        for point in enabledPoints where !point.isAnchor {
+            visibleCount[point.sensorID, default: 0] += 1
+        }
+
         var plotted: [PlottedPoint] = []
         plotted.reserveCapacity(enabledPoints.count)
         var buckets: [String: SeriesBucket] = [:]
@@ -586,11 +618,13 @@ private struct CategoryDetailView: View {
             let sorted = grouped[sensorID, default: []].sorted { $0.timestamp < $1.timestamp }
             let layout = SeriesGaps.layout(timestamps: sorted.map(\.timestamp))
             buckets[sensorID] = SeriesBucket(points: sorted, matchWindow: layout.matchWindow)
+            let markLonelySample = visibleCount[sensorID] == 1
             for (offset, point) in sorted.enumerated() {
                 plotted.append(
                     PlottedPoint(
                         point: point,
-                        segmentID: "\(sensorID)#\(layout.segments[offset])"
+                        segmentID: "\(sensorID)#\(layout.segments[offset])",
+                        drawsMarker: markLonelySample && !point.isAnchor
                     )
                 )
             }
@@ -672,13 +706,6 @@ private struct CategoryDetailView: View {
         } else if sidebarHighlightID == sensorID {
             sidebarHighlightID = nil
         }
-    }
-
-    private var chartColors: [Color] {
-        [
-            .blue, .orange, .green, .pink, .purple, .teal, .red, .yellow,
-            .indigo, .mint, .cyan, .brown,
-        ]
     }
 
     private var outdoorSubtitle: String {

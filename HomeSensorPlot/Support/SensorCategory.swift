@@ -145,6 +145,15 @@ enum SensorCategory: String, CaseIterable, Identifiable, Hashable, Sendable {
                 return $0.roomName < $1.roomName
             }
     }
+
+    /// Chart legend key. Temperature omits the unit because the page title already shows it.
+    func chartSeriesLabel(for sensor: SensorRecord) -> String {
+        let room = sensor.roomName.isEmpty ? sensor.homeName : sensor.roomName
+        if self == .temperature {
+            return "\(room) · \(sensor.accessoryName)"
+        }
+        return "\(room) · \(sensor.accessoryName) · \(sensor.unit)"
+    }
 }
 
 struct ChartSeriesPoint: Identifiable, Hashable, Sendable {
@@ -153,12 +162,15 @@ struct ChartSeriesPoint: Identifiable, Hashable, Sendable {
     var label: String
     var timestamp: Date
     var value: Double
+    /// Sample from before the visible window, kept so the line can enter the left edge.
+    var isAnchor: Bool
 
-    init(sensorID: String, label: String, timestamp: Date, value: Double) {
+    init(sensorID: String, label: String, timestamp: Date, value: Double, isAnchor: Bool = false) {
         self.id = "\(sensorID)|\(timestamp.timeIntervalSince1970)"
         self.sensorID = sensorID
         self.label = label
         self.timestamp = timestamp
         self.value = value
+        self.isAnchor = isAnchor
     }
 }

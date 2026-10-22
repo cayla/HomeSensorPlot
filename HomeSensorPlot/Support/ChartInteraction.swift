@@ -160,3 +160,129 @@ enum ChartInteraction {
         }
     }
 }
+
+/// In-window samples, plus the visible piece of the segment that crosses the left edge.
+///
+/// The earlier sample is not plotted. A mark outside the scale makes Swift Charts
+/// refit the axis around it, which blows up an hour-long domain.
+enum ChartSeriesAssembly {
+    static func seriesPoints<S>(
+        sensorID: String,
+        label: String,
+        windowStart: Date,
+        inWindow: [S],
+        anchor: S?,
+        timestamp: (S) -> Date,
+        value: (S) -> Double
+    ) -> [ChartSeriesPoint] {
+        guard !inWindow.isEmpty else { return [] }
+        var times = inWindow.map(timestamp)
+        var values = inWindow.map(value)
+        if let anchor {
+            let anchorTime = timestamp(anchor)
+            let anchorValue = value(anchor)
+            if anchorTime < times[0] {
+                if anchorTime >= windowStart {
+                    times.insert(anchorTime, at: 0)
+                    values.insert(anchorValue, at: 0)
+                } else if connects(anchorTime: anchorTime, to: times) {
+                    let edge = interpolated(
+                        from: (anchorTime, anchorValue),
+                        to: (times[0], values[0]),
+                        at: windowStart
+                    )
+                    if windowStart < times[0] {
+                        times.insert(windowStart, at: 0)
+                        values.insert(edge, at: 0)
+                    }
+                }
+            }
+        }
+        return zip(times, values).map { time, sampleValue in
+            ChartSeriesPoint(
+                sensorID: sensorID,
+                label: label,
+                timestamp: time,
+                value: sampleValue,
+                isAnchor: false
+            )
+        }
+    }
+
+    /// Same rule as the drawn line: a gap wider than the series' usual spacing stays broken.
+    private static func connects(anchorTime: Date, to times: [Date]) -> Bool {
+        let layout = SeriesGaps.layout(timestamps: [anchorTime] + times)
+        return layout.segments.count > 1 && layout.segments[0] == layout.segments[1]
+    }
+
+    private static func interpolated(
+        from start: (Date, Double),
+        to end: (Date, Double),
+        at time: Date
+    ) -> Double {
+        let span = end.0.timeIntervalSince(start.0)
+        guard span > 0 else { return end.1 }
+        let fraction = min(max(time.timeIntervalSince(start.0) / span, 0), 1)
+        return start.1 + fraction * (end.1 - start.1)
+    }
+}
+
+/// Categorical chart colors, ordered so successive entries stay easy to tell apart.
+///
+/// Six is the set where every pair is still a different named color. Another hue
+/// lands on blue, green, or orange, so later series repeat from the start.
+enum ChartPalette {
+    struct RGB: Equatable, Sendable {
+        var red: Double
+        var green: Double
+        var blue: Double
+    }
+
+    static let ordered: [RGB] = [
+        RGB(red: 0x4C / 255, green: 0x8D / 255, blue: 0xFF / 255),
+        RGB(red: 0xFF / 255, green: 0xE6 / 255, blue: 0x6D / 255),
+        RGB(red: 0xC7 / 255, green: 0x7D / 255, blue: 0xFF / 255),
+        RGB(red: 0x3D / 255, green: 0xDC / 255, blue: 0x57 / 255),
+        RGB(red: 0xFF / 255, green: 0x5D / 255, blue: 0x8F / 255),
+        RGB(red: 0xFF / 255, green: 0x9F / 255, blue: 0x1C / 255),
+    ]
+
+    static func color(atAlphabeticalPosition position: Int) -> RGB {
+        let count = ordered.count
+        let index = ((position % count) + count) % count
+        return ordered[index]
+    }
+
+    /// OKLab distance. Adjacent entries are above 0.20; every pair is above 0.15.
+    static func separation(_ lhs: RGB, _ rhs: RGB) -> Double {
+        let left = oklab(lhs)
+        let right = oklab(rhs)
+        let dL = left.l - right.l
+        let dA = left.a - right.a
+        let dB = left.b - right.b
+        return (dL * dL + dA * dA + dB * dB).squareRoot()
+    }
+
+    private static func oklab(_ color: RGB) -> (l: Double, a: Double, b: Double) {
+        func linear(_ channel: Double) -> Double {
+            if channel <= 0.04045 {
+                return channel / 12.92
+            }
+            return pow((channel + 0.055) / 1.055, 2.4)
+        }
+        let red = linear(color.red)
+        let green = linear(color.green)
+        let blue = linear(color.blue)
+        let l = 0.4122214708 * red + 0.5363325363 * green + 0.0514459929 * blue
+        let m = 0.2119034982 * red + 0.6806995451 * green + 0.1073969566 * blue
+        let s = 0.0883024619 * red + 0.2817188376 * green + 0.6299787005 * blue
+        let lRoot = pow(l, 1.0 / 3.0)
+        let mRoot = pow(m, 1.0 / 3.0)
+        let sRoot = pow(s, 1.0 / 3.0)
+        return (
+            l: 0.2104542553 * lRoot + 0.7936177850 * mRoot - 0.0040720468 * sRoot,
+            a: 1.9779984951 * lRoot - 2.4285922050 * mRoot + 0.4505937099 * sRoot,
+            b: 0.0259040371 * lRoot + 0.7827717662 * mRoot - 0.8086757660 * sRoot
+        )
+    }
+}

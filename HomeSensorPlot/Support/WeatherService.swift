@@ -33,8 +33,8 @@ enum WeatherServiceError: Error, LocalizedError {
 /// Free Open-Meteo forecast/history (no API key). Values are Celsius.
 @MainActor
 final class WeatherService: NSObject, ObservableObject {
-    /// Open-Meteo `past_days` max for the free forecast endpoint.
-    static let maxHistoryDays = 7
+    /// Open-Meteo forecast `past_days` max. Older than this needs the archive API.
+    static let maxHistoryDays = 92
 
     @Published private(set) var lastError: String?
     @Published private(set) var coordinate: CLLocationCoordinate2D?
@@ -70,6 +70,24 @@ final class WeatherService: NSObject, ObservableObject {
 
     static func isHistoryTruncated(from start: Date, now: Date = Date()) -> Bool {
         requestedHistoryDays(from: start, now: now) > maxHistoryDays
+    }
+
+    /// `points` must be time-sorted. A full refetch is unnecessary when the stored hours
+    /// already reach the start we can actually get, and a recent hour.
+    static func storedHistoryCovers(
+        _ points: [OutdoorTemperaturePoint],
+        from start: Date,
+        to end: Date,
+        now: Date = .now
+    ) -> Bool {
+        guard let oldest = points.first?.timestamp, let newest = points.last?.timestamp else {
+            return false
+        }
+        let neededNewest = min(end, now).addingTimeInterval(-2 * 3600)
+        guard newest >= neededNewest else { return false }
+        let earliestAvailable = now.addingTimeInterval(-Double(maxHistoryDays) * 86_400)
+        let neededOldest = max(start, earliestAvailable)
+        return oldest <= neededOldest.addingTimeInterval(3600)
     }
 
     func fetchHourlyTemperatures(from start: Date, to end: Date = .now) async throws -> [OutdoorTemperaturePoint] {
