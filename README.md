@@ -49,7 +49,7 @@ xcodegen generate
 xcodebuild -scheme HomeSensorPlot -destination 'platform=macOS,variant=Mac Catalyst' test
 ```
 
-GitHub Actions runs the HomeSensorPlot scheme tests on pull requests.
+GitHub Actions runs the HomeSensorPlot scheme tests on pull requests with Xcode 27.1.
 
 ## Prometheus scrape
 
