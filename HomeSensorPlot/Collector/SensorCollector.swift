@@ -18,6 +18,17 @@ final class SensorCollector: NSObject, ObservableObject {
     /// True while a scrape/notification collect pass is running.
     var isCollecting: Bool { collectInFlight }
 
+    /// Latest whole-home rebind outcome, for the support dump.
+    private(set) var continuitySummary = "not run yet"
+    private var pendingRebindMap: [String: String] = [:]
+
+    /// Old sensor id → replacement id from the most recent successful rebind. Consumed by the UI refresh.
+    func consumeRebindMap() -> [String: String] {
+        let map = pendingRebindMap
+        pendingRebindMap = [:]
+        return map
+    }
+
     init(store: SampleStore, homeKit: HomeKitSensorProvider, settings: AppSettings) {
         self.store = store
         self.homeKit = homeKit
@@ -128,6 +139,18 @@ final class SensorCollector: NSObject, ObservableObject {
 
         do {
             refreshSensorCache()
+            let decision = SensorContinuity.decide(
+                stored: Array(sensorCache.values),
+                discovered: readings.map(\.sensor)
+            )
+            continuitySummary = decision.summary
+            if case .rebound(let pairs, _, _) = decision {
+                try store.rebind(pairs)
+                pendingRebindMap = Dictionary(uniqueKeysWithValues: pairs.map {
+                    ($0.existing.id, $0.discovered.id)
+                })
+                refreshSensorCache()
+            }
             var batch: [(sensorID: String, timestamp: Date, value: Double)] = []
             var notify: [HMCharacteristic] = []
             let now = Date()

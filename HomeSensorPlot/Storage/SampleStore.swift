@@ -19,14 +19,31 @@ enum SampleStoreError: Error, LocalizedError {
 
 /// Thread-safe SQLite store for sensor metadata and time-series samples.
 final class SampleStore: @unchecked Sendable {
+    static let legacyDatabaseFileName = "homesensorplot.sqlite"
+
     private var db: OpaquePointer?
     private let queue = DispatchQueue(label: "com.cayla.HomeSensorPlot.SampleStore", qos: .utility)
-    private let path: URL
+    let channel: DistributionChannel
+    let databaseURL: URL
 
-    init(directory: URL? = nil) throws {
+    init(directory: URL? = nil, channel: DistributionChannel? = nil) throws {
+        let resolvedChannel = channel ?? DistributionChannel.current()
+        self.channel = resolvedChannel
         let dir = try directory ?? Self.defaultDirectory()
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        path = dir.appendingPathComponent("homesensorplot.sqlite")
+        databaseURL = dir.appendingPathComponent(resolvedChannel.databaseFileName)
+        if !FileManager.default.fileExists(atPath: databaseURL.path) {
+            do {
+                try Self.copyLegacyDatabaseIfNeeded(directory: dir, channel: resolvedChannel, destination: databaseURL)
+            } catch {
+                NSLog(
+                    "HomeSensorPlot: could not copy legacy database into \(resolvedChannel.rawValue) (\(error.localizedDescription)). Starting empty."
+                )
+                if FileManager.default.fileExists(atPath: databaseURL.path) {
+                    try? FileManager.default.removeItem(at: databaseURL)
+                }
+            }
+        }
         try open()
         try migrate()
     }
@@ -267,12 +284,110 @@ final class SampleStore: @unchecked Sendable {
         }
     }
 
+    func sampleCount() throws -> Int {
+        try read("SELECT COUNT(*) FROM samples") { stmt in
+            guard sqlite3_step(stmt) == SQLITE_ROW else { return 0 }
+            return Int(sqlite3_column_int(stmt, 0))
+        }
+    }
+
+    /// Deletes samples and sensor rows in this channel's database. Preferences are untouched.
+    func deleteAllCollectedData() throws {
+        try queue.sync {
+            try exec("BEGIN IMMEDIATE")
+            var succeeded = false
+            defer {
+                if succeeded {
+                    try? exec("COMMIT")
+                } else {
+                    try? exec("ROLLBACK")
+                }
+            }
+            try exec("DELETE FROM samples")
+            try exec("DELETE FROM sensors")
+            succeeded = true
+        }
+    }
+
+    /// Point existing series at a replacement HomeKit id. Hidden and blocked flags stay on the series.
+    func rebind(_ pairs: [SensorContinuityPair]) throws {
+        guard !pairs.isEmpty else { return }
+        try queue.sync {
+            try exec("BEGIN IMMEDIATE")
+            var succeeded = false
+            defer {
+                if succeeded {
+                    try? exec("COMMIT")
+                } else {
+                    try? exec("ROLLBACK")
+                }
+            }
+            for pair in pairs {
+                let flags = try hiddenAndBlocked(sensorID: pair.existing.id)
+                var sensor = pair.discovered
+                sensor.isHidden = flags.hidden
+                sensor.isBlocked = flags.blocked
+                try insertSensorUnlocked(sensor)
+                try writeUnlocked(
+                    "UPDATE samples SET sensor_id = ? WHERE sensor_id = ?"
+                ) { stmt in
+                    bindText(stmt, 1, sensor.id)
+                    bindText(stmt, 2, pair.existing.id)
+                }
+                try writeUnlocked("DELETE FROM sensors WHERE id = ?") { stmt in
+                    bindText(stmt, 1, pair.existing.id)
+                }
+            }
+            succeeded = true
+        }
+    }
+
+    static func legacyCopiedChannels(in directory: URL) -> [String] {
+        let prefix = "homesensorplot.legacy-copied-to-"
+        guard let names = try? FileManager.default.contentsOfDirectory(atPath: directory.path) else {
+            return []
+        }
+        return names.compactMap { name in
+            guard name.hasPrefix(prefix) else { return nil }
+            return String(name.dropFirst(prefix.count))
+        }.sorted()
+    }
+
     // MARK: - Internals
+
+    private static func copyLegacyDatabaseIfNeeded(
+        directory: URL,
+        channel: DistributionChannel,
+        destination: URL
+    ) throws {
+        let legacy = directory.appendingPathComponent(legacyDatabaseFileName)
+        let sentinel = directory.appendingPathComponent("homesensorplot.legacy-copied-to-\(channel.rawValue)")
+        guard FileManager.default.fileExists(atPath: legacy.path) else { return }
+        guard !FileManager.default.fileExists(atPath: sentinel.path) else { return }
+        try checkpointWAL(at: legacy)
+        try FileManager.default.copyItem(at: legacy, to: destination)
+        try Data(channel.rawValue.utf8).write(to: sentinel)
+    }
+
+    private static func checkpointWAL(at databaseURL: URL) throws {
+        var handle: OpaquePointer?
+        let flags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_FULLMUTEX
+        guard sqlite3_open_v2(databaseURL.path, &handle, flags, nil) == SQLITE_OK, let handle else {
+            throw SampleStoreError.openFailed("Could not open legacy database for checkpoint")
+        }
+        defer { sqlite3_close(handle) }
+        var errorMessage: UnsafeMutablePointer<CChar>?
+        guard sqlite3_exec(handle, "PRAGMA wal_checkpoint(TRUNCATE);", nil, nil, &errorMessage) == SQLITE_OK else {
+            let message = errorMessage.map { String(cString: $0) } ?? "Legacy checkpoint failed"
+            sqlite3_free(errorMessage)
+            throw SampleStoreError.stepFailed(message)
+        }
+    }
 
     private func open() throws {
         var handle: OpaquePointer?
         let flags = SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE | SQLITE_OPEN_FULLMUTEX
-        guard sqlite3_open_v2(path.path, &handle, flags, nil) == SQLITE_OK, let handle else {
+        guard sqlite3_open_v2(databaseURL.path, &handle, flags, nil) == SQLITE_OK, let handle else {
             throw SampleStoreError.openFailed(String(cString: sqlite3_errmsg(handle)))
         }
         db = handle
@@ -338,6 +453,54 @@ final class SampleStore: @unchecked Sendable {
             }
             defer { sqlite3_finalize(stmt) }
             return try work(stmt)
+        }
+    }
+
+    private func hiddenAndBlocked(sensorID: String) throws -> (hidden: Bool, blocked: Bool) {
+        let sql = "SELECT is_hidden, is_blocked FROM sensors WHERE id = ?"
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+            throw SampleStoreError.prepareFailed(lastErrorMessage())
+        }
+        defer { sqlite3_finalize(stmt) }
+        bindText(stmt, 1, sensorID)
+        guard sqlite3_step(stmt) == SQLITE_ROW else {
+            throw SampleStoreError.stepFailed("Missing sensor \(sensorID)")
+        }
+        return (sqlite3_column_int(stmt, 0) != 0, sqlite3_column_int(stmt, 1) != 0)
+    }
+
+    private func insertSensorUnlocked(_ sensor: SensorRecord) throws {
+        try writeUnlocked("""
+            INSERT INTO sensors (
+                id, home_name, room_name, accessory_name, service_name,
+                characteristic_type, metric_name, unit, is_hidden, is_blocked, auto_discovered
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """) { stmt in
+            bindText(stmt, 1, sensor.id)
+            bindText(stmt, 2, sensor.homeName)
+            bindText(stmt, 3, sensor.roomName)
+            bindText(stmt, 4, sensor.accessoryName)
+            bindText(stmt, 5, sensor.serviceName)
+            bindText(stmt, 6, sensor.characteristicType)
+            bindText(stmt, 7, sensor.metricName)
+            bindText(stmt, 8, sensor.unit)
+            sqlite3_bind_int(stmt, 9, sensor.isHidden ? 1 : 0)
+            sqlite3_bind_int(stmt, 10, sensor.isBlocked ? 1 : 0)
+            sqlite3_bind_int(stmt, 11, sensor.autoDiscovered ? 1 : 0)
+        }
+    }
+
+    /// Caller must already be on `queue` and inside a transaction.
+    private func writeUnlocked(_ sql: String, bind: (OpaquePointer) -> Void) throws {
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+            throw SampleStoreError.prepareFailed(lastErrorMessage())
+        }
+        defer { sqlite3_finalize(stmt) }
+        bind(stmt)
+        guard sqlite3_step(stmt) == SQLITE_DONE else {
+            throw SampleStoreError.stepFailed(lastErrorMessage())
         }
     }
 

@@ -75,9 +75,11 @@ Temperature charts can overlay Open-Meteo outdoor ° (uses Location). Free Open-
 
 ## Data location
 
-SQLite database (WAL):
+SQLite database (WAL), one file per signing channel:
 
-`~/Library/Containers/com.cayla.HomeSensorPlot/Data/Library/Application Support/HomeSensorPlot/homesensorplot.sqlite`
+`~/Library/Containers/com.cayla.HomeSensorPlot/Data/Library/Application Support/HomeSensorPlot/homesensorplot-<channel>.sqlite`
+
+`<channel>` is `development`, `testflight`, `app-store`, `developer-id`, or `unknown`. A development build and a TestFlight build do not share rows. The first launch of a channel copies the old shared `homesensorplot.sqlite` into that channel's file once, if it is still there, and leaves the original in place.
 
 (or Application Support directly if the container path differs on your system)
 
