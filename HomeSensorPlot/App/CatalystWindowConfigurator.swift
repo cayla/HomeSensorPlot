@@ -151,6 +151,9 @@ enum CatalystWindowConfigurator {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
             guard generation == createGeneration else { return }
             createInFlight = false
+            // A new session was already requested. Asking again while that
+            // activation is still in flight creates a second scene.
+            guard canOpenViaSwiftUI else { return }
             if visibleContentWindow() != nil { return }
             guard UIApplication.shared.connectedScenes.count == sceneCountBefore else { return }
             NSLog("HomeSensorPlot: open produced no window, requesting a scene")
