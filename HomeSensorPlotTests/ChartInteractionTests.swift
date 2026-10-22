@@ -20,6 +20,8 @@ final class ChartInteractionTests: XCTestCase {
 
     func testAxisDomains() {
         XCTAssertEqual(ChartAxisKind.of(.humidity), .percent)
+        XCTAssertEqual(ChartAxisKind.of(.battery), .percent)
+        XCTAssertEqual(ChartAxisKind.of(.filterLife), .percent)
         XCTAssertEqual(ChartAxisKind.of(.contact), .state)
         XCTAssertEqual(ChartAxisKind.of(.temperature), .continuous)
         XCTAssertEqual(ChartAxisKind.percent.domain(values: [40]), 0...100)
@@ -63,6 +65,48 @@ final class ChartInteractionTests: XCTestCase {
         XCTAssertEqual(picks, [ChartInteraction.HoverPick(id: "room", index: 0)])
     }
 
+    func testContinuousPicksKeepSeriesInsideTheYBand() {
+        // Best distance is 10, so the band is 12.5. 12 stays, 30 does not.
+        // Passing the far series first checks that order follows Y distance.
+        let picks = ChartInteraction.picks(
+            series: [
+                pointSeries(id: "far", value: 30),
+                pointSeries(id: "near", value: 10),
+                pointSeries(id: "neighbor", value: 12),
+            ],
+            time: date(minutes: 0),
+            yValue: 0,
+            stateCategory: false
+        )
+        XCTAssertEqual(
+            picks,
+            [
+                ChartInteraction.HoverPick(id: "near", index: 0),
+                ChartInteraction.HoverPick(id: "neighbor", index: 0),
+            ]
+        )
+    }
+
+    func testStatePicksUseATighterYBand() {
+        let picks = ChartInteraction.picks(
+            series: [
+                pointSeries(id: "other", value: 1),
+                pointSeries(id: "here", value: 0),
+                pointSeries(id: "close", value: 0.3),
+            ],
+            time: date(minutes: 0),
+            yValue: 0,
+            stateCategory: true
+        )
+        XCTAssertEqual(
+            picks,
+            [
+                ChartInteraction.HoverPick(id: "here", index: 0),
+                ChartInteraction.HoverPick(id: "close", index: 0),
+            ]
+        )
+    }
+
     func testStateWordingIsShared() {
         XCTAssertEqual(ChartInteraction.hoverText(category: .contact, value: 1), "open")
         XCTAssertEqual(
@@ -95,5 +139,13 @@ final class ChartInteractionTests: XCTestCase {
 
     private func samples(minutes: [Double]) -> [ChartInteraction.Sample] {
         minutes.map { ChartInteraction.Sample(timestamp: date(minutes: $0), value: $0) }
+    }
+
+    private func pointSeries(id: String, value: Double) -> ChartInteraction.HoverSeries {
+        ChartInteraction.HoverSeries(
+            id: id,
+            samples: [ChartInteraction.Sample(timestamp: date(minutes: 0), value: value)],
+            matchWindow: 60
+        )
     }
 }

@@ -19,7 +19,7 @@ Apple marks the HomeKit framework `API_UNAVAILABLE` for **native** macOS AppKit 
 ## Requirements
 
 - macOS 14+
-- Xcode 16+
+- Xcode 27.1
 - Home data access permission
 - HomeKit entitlement (may require [Apple Developer Program](https://developer.apple.com/programs/) if Personal Team cannot enable it)
 

@@ -5,8 +5,6 @@ struct SampleAcceptanceDebouncer: Sendable {
     var window: TimeInterval = 2
     private var lastAccepted: [String: Date] = [:]
 
-    /// The private sample map makes the synthesized memberwise initializer
-    /// fileprivate under Xcode 16, so tests cannot pass `window`.
     init(window: TimeInterval = 2) {
         self.window = window
     }
