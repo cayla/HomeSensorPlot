@@ -5,6 +5,7 @@ import SwiftUI
 @MainActor
 final class AppState: ObservableObject {
     static let outdoorWeatherSeriesID = "__outdoor_weather__"
+    static let outdoorWeatherSeriesLabel = "Outdoor · weather"
 
     let settings: AppSettings
     let store: SampleStore
@@ -19,7 +20,7 @@ final class AppState: ObservableObject {
     @Published var categoryChartPoints: [ChartSeriesPoint] = []
     @Published var outdoorChartEnabled = true
     @Published var outdoorWeatherError: String?
-    @Published var timeBox: TimeBox = .twentyFourHours
+    @Published var timeBox: TimeBox = .lastDay
     @Published var customStart: Date = Date().addingTimeInterval(-86_400)
     @Published var openAtLogin: Bool = LoginItemManager.isEnabled
     @Published var lastRefreshError: String? {
@@ -278,41 +279,33 @@ final class AppState: ObservableObject {
             return
         }
 
-        let start = timeBox.startDate(customStart: customStart)
+        let window = timeBox.window(customStart: customStart)
+        let sampleEnd = window.sampleEnd(now: .now)
         let members = category.sensors(from: sensors)
         var points: [ChartSeriesPoint] = []
         let tempUnit = settings.temperatureUnit
 
         do {
             for sensor in members {
-                let samples = try store.samples(sensorID: sensor.id, from: start)
+                let samples = try store.samples(sensorID: sensor.id, from: window.start, to: sampleEnd)
                 // Keep per-series points modest — large multi-series charts beachball on hover otherwise.
                 let perSeriesCap = max(80, 600 / max(members.count, 1))
                 let downsampled = SeriesDownsample.stride(samples, maxPoints: perSeriesCap)
-                let room = sensor.roomName.isEmpty ? sensor.homeName : sensor.roomName
-                // Temperature: unit shown once on the page title — keep series labels short.
-                let label: String
-                if category == .temperature {
-                    label = "\(room) · \(sensor.accessoryName)"
-                } else {
-                    label = "\(room) · \(sensor.accessoryName) · \(sensor.unit)"
-                }
-                for sample in downsampled {
-                    let value: Double
-                    if category == .temperature {
-                        value = tempUnit.display(fromCelsius: sample.value)
-                    } else {
-                        value = sample.value
+                let anchor = try store.latestSample(sensorID: sensor.id, before: window.start)
+                points.append(contentsOf: ChartSeriesAssembly.seriesPoints(
+                    sensorID: sensor.id,
+                    label: category.chartSeriesLabel(for: sensor),
+                    windowStart: window.start,
+                    inWindow: downsampled,
+                    anchor: anchor,
+                    timestamp: { $0.timestamp },
+                    value: { sample in
+                        if category == .temperature {
+                            return tempUnit.display(fromCelsius: sample.value)
+                        }
+                        return sample.value
                     }
-                    points.append(
-                        ChartSeriesPoint(
-                            sensorID: sensor.id,
-                            label: label,
-                            timestamp: sample.timestamp,
-                            value: value
-                        )
-                    )
-                }
+                ))
             }
 
             // Publish HomeKit series immediately — never block the chart on weather/location.
@@ -321,7 +314,11 @@ final class AppState: ObservableObject {
 
             if category == .temperature, settings.showOutdoorWeather, outdoorChartEnabled {
                 weather.configure(allowIPGeolocationFallback: settings.allowIPGeolocationFallback)
-                await loadOutdoorWeatherOverlay(start: start, temperatureUnit: tempUnit)
+                await loadOutdoorWeatherOverlay(
+                    window: window,
+                    sampleEnd: sampleEnd,
+                    temperatureUnit: tempUnit
+                )
             } else {
                 outdoorWeatherError = nil
             }
@@ -331,22 +328,32 @@ final class AppState: ObservableObject {
         }
     }
 
-    private func loadOutdoorWeatherOverlay(start: Date, temperatureUnit: TemperatureUnit) async {
+    private func loadOutdoorWeatherOverlay(
+        window: ChartTimeWindow,
+        sampleEnd: Date,
+        temperatureUnit: TemperatureUnit
+    ) async {
         do {
-            let outdoor = try await weather.fetchHourlyTemperatures(from: start)
-            let trimmed = Array(outdoor.suffix(max(48, 200)))
-            var outdoorPoints: [ChartSeriesPoint] = []
-            outdoorPoints.reserveCapacity(trimmed.count)
-            for point in trimmed {
-                outdoorPoints.append(
-                    ChartSeriesPoint(
-                        sensorID: Self.outdoorWeatherSeriesID,
-                        label: "Outdoor · weather",
-                        timestamp: point.timestamp,
-                        value: temperatureUnit.display(fromCelsius: point.celsius)
-                    )
-                )
+            // One extra hour so the segment that crosses the left edge is available.
+            // Open-Meteo temperature_2m is an hourly series; this is not a poll interval.
+            let outdoor = try await weather.fetchHourlyTemperatures(
+                from: window.start.addingTimeInterval(-3600),
+                to: sampleEnd
+            )
+            let inWindow = outdoor.filter { $0.timestamp >= window.start && $0.timestamp <= sampleEnd }
+            let trimmed = Array(inWindow.suffix(max(48, 200)))
+            let anchor = trimmed.first.flatMap { first in
+                outdoor.last { $0.timestamp < first.timestamp }
             }
+            let outdoorPoints = ChartSeriesAssembly.seriesPoints(
+                sensorID: Self.outdoorWeatherSeriesID,
+                label: Self.outdoorWeatherSeriesLabel,
+                windowStart: window.start,
+                inWindow: trimmed,
+                anchor: anchor,
+                timestamp: { $0.timestamp },
+                value: { temperatureUnit.display(fromCelsius: $0.celsius) }
+            )
             // Keep whatever indoor series is current; swap outdoor series only.
             var merged = categoryChartPoints.filter { $0.sensorID != Self.outdoorWeatherSeriesID }
             merged.append(contentsOf: outdoorPoints)

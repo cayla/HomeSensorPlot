@@ -133,12 +133,85 @@ final class ChartInteractionTests: XCTestCase {
         )
     }
 
+    func testLeadingAnchorIsKeptAndMarked() {
+        let windowStart = date(minutes: 60)
+        let points = ChartSeriesAssembly.seriesPoints(
+            sensorID: "outdoor",
+            label: "Outdoor · weather",
+            windowStart: windowStart,
+            inWindow: [reading(minutes: 90, value: 12)],
+            anchor: reading(minutes: 0, value: 10),
+            timestamp: { $0.timestamp },
+            value: { $0.value }
+        )
+        XCTAssertEqual(points.map(\.isAnchor), [true, false])
+        XCTAssertEqual(points.map(\.value), [10, 12])
+    }
+
+    func testEmptyWindowDropsTheAnchor() {
+        let points = ChartSeriesAssembly.seriesPoints(
+            sensorID: "outdoor",
+            label: "Outdoor · weather",
+            windowStart: date(minutes: 60),
+            inWindow: [ChartInteraction.Sample](),
+            anchor: reading(minutes: 0, value: 10),
+            timestamp: { $0.timestamp },
+            value: { $0.value }
+        )
+        XCTAssertTrue(points.isEmpty)
+    }
+
+    func testAnchorInsideTheWindowIsARealSample() {
+        let points = ChartSeriesAssembly.seriesPoints(
+            sensorID: "outdoor",
+            label: "Outdoor · weather",
+            windowStart: date(minutes: 0),
+            inWindow: [reading(minutes: 120, value: 12)],
+            anchor: reading(minutes: 60, value: 11),
+            timestamp: { $0.timestamp },
+            value: { $0.value }
+        )
+        XCTAssertEqual(points.map(\.isAnchor), [false, false])
+    }
+
+    func testPaletteRepeatsFromTheStart() {
+        let count = ChartPalette.ordered.count
+        XCTAssertEqual(ChartPalette.color(atAlphabeticalPosition: 0), ChartPalette.ordered[0])
+        XCTAssertEqual(ChartPalette.color(atAlphabeticalPosition: 1), ChartPalette.ordered[1])
+        XCTAssertEqual(ChartPalette.color(atAlphabeticalPosition: count), ChartPalette.ordered[0])
+        XCTAssertEqual(ChartPalette.color(atAlphabeticalPosition: count + 2), ChartPalette.ordered[2])
+    }
+
+    func testPaletteNeighborsStayApart() {
+        let colors = ChartPalette.ordered
+        XCTAssertGreaterThan(colors.count, 1)
+        for index in colors.indices {
+            let next = colors[(index + 1) % colors.count]
+            XCTAssertGreaterThan(ChartPalette.separation(colors[index], next), 0.20)
+        }
+        for left in colors.indices {
+            for right in colors.indices where right > left {
+                XCTAssertGreaterThan(ChartPalette.separation(colors[left], colors[right]), 0.15)
+            }
+        }
+        // Locks the OKLab helper to the blue → yellow step.
+        XCTAssertEqual(
+            ChartPalette.separation(colors[0], colors[1]),
+            0.416,
+            accuracy: 0.01
+        )
+    }
+
     private func date(minutes: Double) -> Date {
         Date(timeIntervalSince1970: minutes * 60)
     }
 
     private func samples(minutes: [Double]) -> [ChartInteraction.Sample] {
         minutes.map { ChartInteraction.Sample(timestamp: date(minutes: $0), value: $0) }
+    }
+
+    private func reading(minutes: Double, value: Double) -> ChartInteraction.Sample {
+        ChartInteraction.Sample(timestamp: date(minutes: minutes), value: value)
     }
 
     private func pointSeries(id: String, value: Double) -> ChartInteraction.HoverSeries {

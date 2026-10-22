@@ -116,27 +116,72 @@ enum CollectorStatus: Equatable, Sendable {
     }
 }
 
+/// Visible chart domain. `end` is the right edge, including a calendar boundary still in the future.
+struct ChartTimeWindow: Equatable, Sendable {
+    var start: Date
+    var end: Date
+
+    /// Stored samples stop at now. A calendar window keeps its future edge on the axis.
+    func sampleEnd(now: Date) -> Date {
+        min(now, end)
+    }
+}
+
 enum TimeBox: String, CaseIterable, Identifiable, Sendable {
-    case oneHour = "1h"
-    case twentyFourHours = "24h"
-    case sevenDays = "7d"
-    case thirtyDays = "30d"
+    case lastHour = "Last hour"
+    case thisHour = "This hour"
+    case lastDay = "Last 24 hours"
+    case today = "Today"
+    case lastWeek = "Last 7 days"
+    case thisWeek = "This week"
+    case lastMonth = "Last 30 days"
+    case thisMonth = "This month"
     case custom = "Custom"
 
     var id: String { rawValue }
 
-    func startDate(relativeTo now: Date = .now, customStart: Date? = nil) -> Date {
+    /// Trailing cases end at `now`. Calendar cases are the local unit that contains `now`.
+    func window(
+        relativeTo now: Date = .now,
+        calendar: Calendar = .current,
+        customStart: Date? = nil
+    ) -> ChartTimeWindow {
         switch self {
-        case .oneHour:
-            return now.addingTimeInterval(-3600)
-        case .twentyFourHours:
-            return now.addingTimeInterval(-86_400)
-        case .sevenDays:
-            return now.addingTimeInterval(-7 * 86_400)
-        case .thirtyDays:
-            return now.addingTimeInterval(-30 * 86_400)
+        case .lastHour:
+            return trailing(now, seconds: 3600)
+        case .thisHour:
+            return calendarWindow(.hour, now: now, calendar: calendar) ?? trailing(now, seconds: 3600)
+        case .lastDay:
+            return trailing(now, seconds: 86_400)
+        case .today:
+            return calendarWindow(.day, now: now, calendar: calendar) ?? trailing(now, seconds: 86_400)
+        case .lastWeek:
+            return trailing(now, seconds: 7 * 86_400)
+        case .thisWeek:
+            return calendarWindow(.weekOfYear, now: now, calendar: calendar) ?? trailing(now, seconds: 7 * 86_400)
+        case .lastMonth:
+            return trailing(now, seconds: 30 * 86_400)
+        case .thisMonth:
+            return calendarWindow(.month, now: now, calendar: calendar) ?? trailing(now, seconds: 30 * 86_400)
         case .custom:
-            return customStart ?? now.addingTimeInterval(-86_400)
+            let start = customStart ?? now.addingTimeInterval(-86_400)
+            if start < now {
+                return ChartTimeWindow(start: start, end: now)
+            }
+            return ChartTimeWindow(start: now, end: now.addingTimeInterval(60))
         }
+    }
+
+    private func trailing(_ now: Date, seconds: TimeInterval) -> ChartTimeWindow {
+        ChartTimeWindow(start: now.addingTimeInterval(-seconds), end: now)
+    }
+
+    private func calendarWindow(
+        _ component: Calendar.Component,
+        now: Date,
+        calendar: Calendar
+    ) -> ChartTimeWindow? {
+        guard let interval = calendar.dateInterval(of: component, for: now) else { return nil }
+        return ChartTimeWindow(start: interval.start, end: interval.end)
     }
 }

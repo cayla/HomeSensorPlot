@@ -43,6 +43,15 @@ final class SensorCategoryTests: XCTestCase {
         XCTAssertEqual(SensorCategory.categoriesPresent(in: sensors), [.temperature])
     }
 
+    func testChartSeriesLabelOmitsTemperatureUnit() {
+        let sensor = makeSensor(id: "t", room: "Kitchen", accessory: "Ecobee", metric: "homekit_temperature_celsius")
+        XCTAssertEqual(SensorCategory.temperature.chartSeriesLabel(for: sensor), "Kitchen · Ecobee")
+        XCTAssertEqual(
+            SensorCategory.humidity.chartSeriesLabel(for: sensor),
+            "Kitchen · Ecobee · celsius"
+        )
+    }
+
     func testUnitHintRespectsTemperatureSetting() {
         XCTAssertEqual(SensorCategory.temperature.unitHint(temperatureUnit: .fahrenheit), "°F")
         XCTAssertEqual(SensorCategory.battery.unitHint(), "%")

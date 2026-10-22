@@ -218,6 +218,27 @@ final class SampleStore: @unchecked Sendable {
         }
     }
 
+    /// Newest sample strictly before `date`, for drawing a line into the chart window.
+    func latestSample(sensorID: String, before date: Date) throws -> SamplePoint? {
+        try read("""
+            SELECT id, sensor_id, ts, value
+            FROM samples
+            WHERE sensor_id = ? AND ts < ?
+            ORDER BY ts DESC
+            LIMIT 1
+            """) { stmt in
+            bindText(stmt, 1, sensorID)
+            sqlite3_bind_double(stmt, 2, date.timeIntervalSince1970)
+            guard sqlite3_step(stmt) == SQLITE_ROW else { return nil }
+            return SamplePoint(
+                id: sqlite3_column_int64(stmt, 0),
+                sensorID: String(cString: sqlite3_column_text(stmt, 1)),
+                timestamp: Date(timeIntervalSince1970: sqlite3_column_double(stmt, 2)),
+                value: sqlite3_column_double(stmt, 3)
+            )
+        }
+    }
+
     func latestSamples(includeHidden: Bool = false) throws -> [LatestSample] {
         let hiddenClause = includeHidden ? "" : "AND s.is_hidden = 0"
         return try read("""

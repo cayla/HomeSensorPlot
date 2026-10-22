@@ -4,36 +4,70 @@ import XCTest
 final class TimeBoxTests: XCTestCase {
     private let now = Date(timeIntervalSince1970: 1_700_000_000)
 
-    func testPresetOffsets() {
-        XCTAssertEqual(
-            TimeBox.oneHour.startDate(relativeTo: now).timeIntervalSince1970,
-            now.timeIntervalSince1970 - 3600,
-            accuracy: 0.001
-        )
-        XCTAssertEqual(
-            TimeBox.twentyFourHours.startDate(relativeTo: now).timeIntervalSince1970,
-            now.timeIntervalSince1970 - 86_400,
-            accuracy: 0.001
-        )
-        XCTAssertEqual(
-            TimeBox.sevenDays.startDate(relativeTo: now).timeIntervalSince1970,
-            now.timeIntervalSince1970 - 7 * 86_400,
-            accuracy: 0.001
-        )
-        XCTAssertEqual(
-            TimeBox.thirtyDays.startDate(relativeTo: now).timeIntervalSince1970,
-            now.timeIntervalSince1970 - 30 * 86_400,
-            accuracy: 0.001
-        )
+    func testTrailingWindowsEndAtNow() {
+        assertTrailing(.lastHour, seconds: 3600)
+        assertTrailing(.lastDay, seconds: 86_400)
+        assertTrailing(.lastWeek, seconds: 7 * 86_400)
+        assertTrailing(.lastMonth, seconds: 30 * 86_400)
     }
 
-    func testCustomUsesProvidedStart() {
-        let custom = Date(timeIntervalSince1970: 1_699_000_000)
-        XCTAssertEqual(TimeBox.custom.startDate(relativeTo: now, customStart: custom), custom)
+    func testCalendarWindowsAreTheContainingUnit() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        calendar.firstWeekday = 1
+
+        assertCalendar(.thisHour, component: .hour, calendar: calendar)
+        assertCalendar(.today, component: .day, calendar: calendar)
+        assertCalendar(.thisWeek, component: .weekOfYear, calendar: calendar)
+        assertCalendar(.thisMonth, component: .month, calendar: calendar)
+    }
+
+    func testCalendarWindowIsNotTheTrailingWindow() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let hour = TimeBox.thisHour.window(relativeTo: now, calendar: calendar)
+        XCTAssertNotEqual(hour.start, now.addingTimeInterval(-3600))
+        XCTAssertGreaterThan(hour.end, now)
+    }
+
+    func testCustomUsesProvidedStartAndEndsAtNow() {
+        let custom = now.addingTimeInterval(-5000)
+        let window = TimeBox.custom.window(relativeTo: now, customStart: custom)
+        XCTAssertEqual(window.start, custom)
+        XCTAssertEqual(window.end, now)
     }
 
     func testCustomFallsBackToOneDay() {
-        let start = TimeBox.custom.startDate(relativeTo: now, customStart: nil)
-        XCTAssertEqual(start.timeIntervalSince1970, now.timeIntervalSince1970 - 86_400, accuracy: 0.001)
+        let window = TimeBox.custom.window(relativeTo: now, customStart: nil)
+        XCTAssertEqual(window.start, now.addingTimeInterval(-86_400))
+        XCTAssertEqual(window.end, now)
+    }
+
+    func testCustomStartInTheFutureStaysNearNow() {
+        let window = TimeBox.custom.window(relativeTo: now, customStart: now.addingTimeInterval(3600))
+        XCTAssertEqual(window.start, now)
+        XCTAssertEqual(window.end, now.addingTimeInterval(60))
+    }
+
+    func testSampleEndStopsAtNow() {
+        let window = ChartTimeWindow(start: now.addingTimeInterval(-3600), end: now.addingTimeInterval(3600))
+        XCTAssertEqual(window.sampleEnd(now: now), now)
+        let trailing = ChartTimeWindow(start: now.addingTimeInterval(-3600), end: now)
+        XCTAssertEqual(trailing.sampleEnd(now: now), now)
+    }
+
+    private func assertTrailing(_ box: TimeBox, seconds: TimeInterval) {
+        let window = box.window(relativeTo: now)
+        XCTAssertEqual(window.end, now)
+        XCTAssertEqual(window.start.timeIntervalSince1970, now.timeIntervalSince1970 - seconds, accuracy: 0.001)
+    }
+
+    private func assertCalendar(_ box: TimeBox, component: Calendar.Component, calendar: Calendar) {
+        let window = box.window(relativeTo: now, calendar: calendar)
+        let expected = calendar.dateInterval(of: component, for: now)!
+        XCTAssertEqual(window.start, expected.start)
+        XCTAssertEqual(window.end, expected.end)
+        XCTAssertLessThanOrEqual(window.start, now)
+        XCTAssertGreaterThan(window.end, now)
     }
 }
