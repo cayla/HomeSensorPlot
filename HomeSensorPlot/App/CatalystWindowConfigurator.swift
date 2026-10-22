@@ -149,8 +149,10 @@ enum CatalystWindowConfigurator {
         let scenes = contentScenes()
         guard scenes.count == 1,
               let windowScene = scenes.first,
-              largestContentWindow(in: windowScene) != nil
+              let window = largestContentWindow(in: windowScene)
         else { return }
+        window.isHidden = false
+        window.makeKeyAndVisible()
 
         let saved = pendingRestoreFrame ?? WindowFrameStore.load()
         let size = clamped(saved?.size ?? defaultSize)
