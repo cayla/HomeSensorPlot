@@ -147,6 +147,38 @@ final class SampleStoreTests: XCTestCase {
         XCTAssertEqual(SampleStore.legacyCopiedChannels(in: dir), ["app-store", "testflight"])
     }
 
+    func testOutdoorTemperaturesUpsertAndReplace() throws {
+        let hour = Date(timeIntervalSince1970: 1_700_000_000)
+        try store.upsertOutdoorTemperatures([
+            OutdoorTemperaturePoint(timestamp: hour, celsius: 10),
+            OutdoorTemperaturePoint(timestamp: hour.addingTimeInterval(3600), celsius: 11),
+        ])
+        try store.upsertOutdoorTemperatures([
+            OutdoorTemperaturePoint(timestamp: hour, celsius: 12),
+        ])
+
+        let points = try store.outdoorTemperatures(
+            from: hour.addingTimeInterval(-60),
+            to: hour.addingTimeInterval(7200)
+        )
+        XCTAssertEqual(points.map(\.celsius), [12, 11])
+    }
+
+    func testPruneRemovesOldOutdoorHours() throws {
+        let old = Date().addingTimeInterval(-10 * 86_400)
+        try store.upsertOutdoorTemperatures([
+            OutdoorTemperaturePoint(timestamp: old, celsius: 1),
+            OutdoorTemperaturePoint(timestamp: Date(), celsius: 2),
+        ])
+        _ = try store.prune(retentionDays: 5)
+        let points = try store.outdoorTemperatures(
+            from: Date().addingTimeInterval(-30 * 86_400),
+            to: Date().addingTimeInterval(60)
+        )
+        XCTAssertEqual(points.count, 1)
+        XCTAssertEqual(points[0].celsius, 2, accuracy: 0.0001)
+    }
+
     func testLatestSampleBeforeIsStrict() throws {
         try store.upsertSensor(makeSensor(id: "s1", metric: "homekit_temperature_celsius"))
         let boundary = Date(timeIntervalSince1970: 1_700_000_000)

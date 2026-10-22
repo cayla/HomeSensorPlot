@@ -29,7 +29,7 @@ struct SettingsView: View {
                         Task { await appState.reloadCategoryChart() }
                     }
                 ))
-                Text("Uses Open-Meteo (free, no key) and your Mac’s location for local outdoor °. Stored HomeKit values stay in Celsius for Prometheus. Outdoor history maxes out at \(WeatherService.maxHistoryDays) days.")
+                Text("Uses Open-Meteo (free, no key) and your Mac’s location for local outdoor °. Each hour is kept in this database. Open-Meteo backfills about \(WeatherService.maxHistoryDays) days. Stored HomeKit values stay in Celsius for Prometheus.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
@@ -184,7 +184,7 @@ struct SettingsView: View {
                     confirmReset = true
                 }
                 .tint(.red)
-                Text("Deletes every sample and sensor record in this database. Cannot be undone. Units, exporter, and login settings stay.")
+                Text("Deletes every sample, outdoor hour, and sensor record in this database. Cannot be undone. Units, exporter, and login settings stay.")
                     .font(.caption)
                     .foregroundStyle(.red)
             }

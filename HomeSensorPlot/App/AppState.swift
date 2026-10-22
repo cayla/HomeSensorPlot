@@ -333,32 +333,30 @@ final class AppState: ObservableObject {
         sampleEnd: Date,
         temperatureUnit: TemperatureUnit
     ) async {
+        let fetchStart = window.start.addingTimeInterval(-3600)
         do {
-            // One extra hour so the segment that crosses the left edge is available.
-            // Open-Meteo temperature_2m is an hourly series; this is not a poll interval.
-            let outdoor = try await weather.fetchHourlyTemperatures(
-                from: window.start.addingTimeInterval(-3600),
-                to: sampleEnd
-            )
-            let inWindow = outdoor.filter { $0.timestamp >= window.start && $0.timestamp <= sampleEnd }
-            let trimmed = Array(inWindow.suffix(max(48, 200)))
-            let anchor = trimmed.first.flatMap { first in
-                outdoor.last { $0.timestamp < first.timestamp }
+            var stored = try store.outdoorTemperatures(from: fetchStart, to: sampleEnd)
+            if !WeatherService.storedHistoryCovers(stored, from: fetchStart, to: sampleEnd) {
+                do {
+                    // One extra hour so the segment that crosses the left edge is available.
+                    let fresh = try await weather.fetchHourlyTemperatures(from: fetchStart, to: sampleEnd)
+                    try store.upsertOutdoorTemperatures(fresh)
+                    stored = try store.outdoorTemperatures(from: fetchStart, to: sampleEnd)
+                } catch {
+                    guard !stored.isEmpty else {
+                        outdoorWeatherError = error.localizedDescription
+                        categoryChartPoints = categoryChartPoints.filter {
+                            $0.sensorID != Self.outdoorWeatherSeriesID
+                        }
+                        return
+                    }
+                    publishOutdoor(stored, window: window, temperatureUnit: temperatureUnit)
+                    outdoorWeatherError = error.localizedDescription
+                    return
+                }
             }
-            let outdoorPoints = ChartSeriesAssembly.seriesPoints(
-                sensorID: Self.outdoorWeatherSeriesID,
-                label: Self.outdoorWeatherSeriesLabel,
-                windowStart: window.start,
-                inWindow: trimmed,
-                anchor: anchor,
-                timestamp: { $0.timestamp },
-                value: { temperatureUnit.display(fromCelsius: $0.celsius) }
-            )
-            // Keep whatever indoor series is current; swap outdoor series only.
-            var merged = categoryChartPoints.filter { $0.sensorID != Self.outdoorWeatherSeriesID }
-            merged.append(contentsOf: outdoorPoints)
-            categoryChartPoints = merged
-            if weather.historyTruncated {
+            publishOutdoor(stored, window: window, temperatureUnit: temperatureUnit)
+            if WeatherService.isHistoryTruncated(from: window.start) {
                 outdoorWeatherError =
                     "Outdoor history limited to \(WeatherService.maxHistoryDays) days (Open-Meteo)."
             } else {
@@ -368,6 +366,29 @@ final class AppState: ObservableObject {
             outdoorWeatherError = error.localizedDescription
             categoryChartPoints = categoryChartPoints.filter { $0.sensorID != Self.outdoorWeatherSeriesID }
         }
+    }
+
+    private func publishOutdoor(
+        _ outdoor: [OutdoorTemperaturePoint],
+        window: ChartTimeWindow,
+        temperatureUnit: TemperatureUnit
+    ) {
+        let inWindow = outdoor.filter { $0.timestamp >= window.start && $0.timestamp <= window.end }
+        let anchor = inWindow.first.flatMap { first in
+            outdoor.last { $0.timestamp < first.timestamp }
+        }
+        let outdoorPoints = ChartSeriesAssembly.seriesPoints(
+            sensorID: Self.outdoorWeatherSeriesID,
+            label: Self.outdoorWeatherSeriesLabel,
+            windowStart: window.start,
+            inWindow: inWindow,
+            anchor: anchor,
+            timestamp: { $0.timestamp },
+            value: { temperatureUnit.display(fromCelsius: $0.celsius) }
+        )
+        var merged = categoryChartPoints.filter { $0.sensorID != Self.outdoorWeatherSeriesID }
+        merged.append(contentsOf: outdoorPoints)
+        categoryChartPoints = merged
     }
 
     func setHidden(sensorID: String, hidden: Bool) {

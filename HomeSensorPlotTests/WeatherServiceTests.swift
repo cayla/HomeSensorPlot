@@ -8,13 +8,13 @@ final class WeatherServiceTests: XCTestCase {
         let now = Date(timeIntervalSince1970: 1_700_000_000)
         XCTAssertFalse(
             WeatherService.isHistoryTruncated(
-                from: now.addingTimeInterval(-3 * 86_400),
+                from: now.addingTimeInterval(-30 * 86_400),
                 now: now
             )
         )
         XCTAssertTrue(
             WeatherService.isHistoryTruncated(
-                from: now.addingTimeInterval(-30 * 86_400),
+                from: now.addingTimeInterval(-100 * 86_400),
                 now: now
             )
         )
@@ -22,6 +22,37 @@ final class WeatherServiceTests: XCTestCase {
             WeatherService.requestedHistoryDays(from: now.addingTimeInterval(-86_400), now: now),
             2
         )
+    }
+
+    func testStoredHistoryCoversARecentFullSpan() {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        let start = now.addingTimeInterval(-30 * 86_400)
+        let points = [
+            OutdoorTemperaturePoint(timestamp: start, celsius: 1),
+            OutdoorTemperaturePoint(timestamp: now.addingTimeInterval(-3600), celsius: 2),
+        ]
+        XCTAssertTrue(WeatherService.storedHistoryCovers(points, from: start, to: now, now: now))
+    }
+
+    func testStoredHistoryDoesNotCoverAShortPrefix() {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        let start = now.addingTimeInterval(-30 * 86_400)
+        let points = [
+            OutdoorTemperaturePoint(timestamp: now.addingTimeInterval(-6 * 86_400), celsius: 1),
+            OutdoorTemperaturePoint(timestamp: now.addingTimeInterval(-3600), celsius: 2),
+        ]
+        XCTAssertFalse(WeatherService.storedHistoryCovers(points, from: start, to: now, now: now))
+    }
+
+    func testStoredHistoryTreatsTheApiLimitAsCovered() {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        let start = now.addingTimeInterval(-200 * 86_400)
+        let oldestAvailable = now.addingTimeInterval(-Double(WeatherService.maxHistoryDays) * 86_400)
+        let points = [
+            OutdoorTemperaturePoint(timestamp: oldestAvailable, celsius: 1),
+            OutdoorTemperaturePoint(timestamp: now.addingTimeInterval(-3600), celsius: 2),
+        ]
+        XCTAssertTrue(WeatherService.storedHistoryCovers(points, from: start, to: now, now: now))
     }
 
     func testIPFallbackDisabledThrowsWithoutNetwork() async {

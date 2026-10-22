@@ -278,7 +278,58 @@ final class SampleStore: @unchecked Sendable {
             try writeUnlocked("DELETE FROM samples WHERE ts < ?") { stmt in
                 sqlite3_bind_double(stmt, 1, cutoff.timeIntervalSince1970)
             }
-            return Int(sqlite3_changes(db))
+            let removed = Int(sqlite3_changes(db))
+            try writeUnlocked("DELETE FROM outdoor_temperatures WHERE ts < ?") { stmt in
+                sqlite3_bind_double(stmt, 1, cutoff.timeIntervalSince1970)
+            }
+            return removed
+        }
+    }
+
+    func upsertOutdoorTemperatures(_ points: [OutdoorTemperaturePoint]) throws {
+        guard !points.isEmpty else { return }
+        try queue.sync {
+            try transaction {
+                let sql = """
+                    INSERT INTO outdoor_temperatures (ts, celsius) VALUES (?, ?)
+                    ON CONFLICT(ts) DO UPDATE SET celsius = excluded.celsius
+                    """
+                var stmt: OpaquePointer?
+                guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+                    throw SampleStoreError.prepareFailed(lastErrorMessage())
+                }
+                defer { sqlite3_finalize(stmt) }
+                for point in points {
+                    sqlite3_reset(stmt)
+                    sqlite3_clear_bindings(stmt)
+                    sqlite3_bind_double(stmt, 1, point.timestamp.timeIntervalSince1970)
+                    sqlite3_bind_double(stmt, 2, point.celsius)
+                    guard sqlite3_step(stmt) == SQLITE_DONE else {
+                        throw SampleStoreError.stepFailed(lastErrorMessage())
+                    }
+                }
+            }
+        }
+    }
+
+    func outdoorTemperatures(from start: Date, to end: Date = .now) throws -> [OutdoorTemperaturePoint] {
+        try read("""
+            SELECT ts, celsius FROM outdoor_temperatures
+            WHERE ts >= ? AND ts <= ?
+            ORDER BY ts ASC
+            """) { stmt in
+            sqlite3_bind_double(stmt, 1, start.timeIntervalSince1970)
+            sqlite3_bind_double(stmt, 2, end.timeIntervalSince1970)
+            var points: [OutdoorTemperaturePoint] = []
+            while sqlite3_step(stmt) == SQLITE_ROW {
+                points.append(
+                    OutdoorTemperaturePoint(
+                        timestamp: Date(timeIntervalSince1970: sqlite3_column_double(stmt, 0)),
+                        celsius: sqlite3_column_double(stmt, 1)
+                    )
+                )
+            }
+            return points
         }
     }
 
@@ -301,6 +352,7 @@ final class SampleStore: @unchecked Sendable {
         try queue.sync {
             try transaction {
                 try exec("DELETE FROM samples")
+                try exec("DELETE FROM outdoor_temperatures")
                 try exec("DELETE FROM sensors")
             }
         }
@@ -408,6 +460,10 @@ final class SampleStore: @unchecked Sendable {
                 FOREIGN KEY(sensor_id) REFERENCES sensors(id) ON DELETE CASCADE
             );
             CREATE INDEX IF NOT EXISTS idx_samples_sensor_ts ON samples(sensor_id, ts);
+            CREATE TABLE IF NOT EXISTS outdoor_temperatures (
+                ts REAL PRIMARY KEY,
+                celsius REAL NOT NULL
+            );
             """)
     }
 
