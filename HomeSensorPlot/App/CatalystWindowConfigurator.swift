@@ -1,27 +1,28 @@
 import Foundation
 
 #if targetEnvironment(macCatalyst)
-import SwiftUI
 import UIKit
 
 enum CatalystWindowConfigurator {
-    private static let widthKey = "windowFrameWidth"
-    private static let heightKey = "windowFrameHeight"
     private static let defaultSize = CGSize(width: 1280, height: 860)
     private static let minimumSize = CGSize(width: 720, height: 480)
 
-    private static var saveWorkItem: DispatchWorkItem?
-    private static var didApplyRestoredSize = false
+    private static var didApplyRestoredFrame = false
+    private static var restoreAttempts = 0
+    /// Captured before the new window exists, so its default placement cannot overwrite the saved origin.
+    private static var pendingRestoreFrame: CGRect?
+    private static var createInFlight = false
+    private static var createGeneration = 0
 
-    /// Raise resize limits, restore last size (or a sensible default), and start persisting changes.
+    /// Raise resize limits and put a new window back where it was last closed.
+    /// The system's own placement lands after the first layout, so this retries briefly.
     static func configure() {
         allowResizing()
-        applyStoredOrDefaultSize()
-        // Size restrictions / geometry sometimes stick only after the first layout pass.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-            allowResizing()
-            if !didApplyRestoredSize {
-                applyStoredOrDefaultSize()
+        applyStoredFrameIfNeeded()
+        for delay in [0.25, 0.6, 1.1] {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                allowResizing()
+                applyStoredFrameIfNeeded()
             }
         }
     }
@@ -37,31 +38,91 @@ enum CatalystWindowConfigurator {
         }
     }
 
-    /// Menu bar → Open HomeSensorPlot (works even after the window was closed).
+    /// Menu bar → create a window. Called only when AppKit reports nothing on screen.
+    /// A closed window still occupies a scene at its last size; discard those before
+    /// creating, or SwiftUI reuses the corpse and the new window flashes away.
     static func showMainWindow() {
-        didApplyRestoredSize = false
-        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
-        NSLog(
-            "HomeSensorPlot: showMainWindow — %d scene(s), %d window(s)",
-            scenes.count,
-            scenes.reduce(0) { $0 + $1.windows.count }
-        )
-
-        // 1) SwiftUI reopen (best after the user closed the window).
-        if let openMain = WindowOpenRegistrarStore.openMain {
-            NSLog("HomeSensorPlot: showMainWindow via openWindow(id: main)")
-            openMain()
-        }
-
-        // 2) Surface any existing UIWindows. Do NOT call requestSceneSessionActivation
-        //    on an existing session when SupportsMultipleScenes was false — that errors with
-        //    "application does not support multiple scenes" even for the same session.
-        if revealAllWindows() {
-            configure()
+        guard !createInFlight else {
+            NSLog("HomeSensorPlot: showMainWindow already creating a window")
             return
         }
 
-        // 3) No live windows — ask UIKit for a new scene (needs SupportsMultipleScenes).
+        createInFlight = true
+        let generation = createGeneration
+        let stale = contentScenes()
+        if stale.isEmpty {
+            beginCreatingWindow(generation: generation, sceneCountBefore: UIApplication.shared.connectedScenes.count)
+            return
+        }
+
+        NSLog("HomeSensorPlot: showMainWindow discarding %d closed scene(s)", stale.count)
+        let staleSessions = Set(stale.map { ObjectIdentifier($0.session) })
+        for scene in stale {
+            let window = largestContentWindow(in: scene)
+            NSLog(
+                "HomeSensorPlot: closed scene state=%@ hidden=%d frame=%@",
+                activationLabel(scene.activationState),
+                window?.isHidden == true ? 1 : 0,
+                NSCoder.string(for: window?.frame ?? .zero)
+            )
+            UIApplication.shared.requestSceneSessionDestruction(scene.session, options: nil) { error in
+                NSLog("HomeSensorPlot: destroy closed scene failed: %@", error.localizedDescription)
+            }
+        }
+        waitForClosedScenesToLeave(staleSessions, generation: generation, attemptsLeft: 10)
+    }
+
+    private static func waitForClosedScenesToLeave(
+        _ staleSessions: Set<ObjectIdentifier>,
+        generation: Int,
+        attemptsLeft: Int
+    ) {
+        guard generation == createGeneration else { return }
+        let stillConnected = UIApplication.shared.connectedScenes.contains {
+            staleSessions.contains(ObjectIdentifier($0.session))
+        }
+        if stillConnected, attemptsLeft > 0 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                waitForClosedScenesToLeave(
+                    staleSessions,
+                    generation: generation,
+                    attemptsLeft: attemptsLeft - 1
+                )
+            }
+            return
+        }
+        beginCreatingWindow(
+            generation: generation,
+            sceneCountBefore: UIApplication.shared.connectedScenes.count
+        )
+    }
+
+    private static func beginCreatingWindow(generation: Int, sceneCountBefore: Int) {
+        guard generation == createGeneration else { return }
+        didApplyRestoredFrame = false
+        restoreAttempts = 0
+        pendingRestoreFrame = WindowFrameStore.load()
+        let canOpenViaSwiftUI = WindowOpenRegistrarStore.openMain != nil
+        if canOpenViaSwiftUI {
+            NSLog("HomeSensorPlot: showMainWindow via openWindow(id: main)")
+            WindowOpenRegistrarStore.openMain?()
+        } else {
+            requestNewScene()
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+            guard generation == createGeneration else { return }
+            createInFlight = false
+            if visibleContentWindow() != nil { return }
+            guard canOpenViaSwiftUI,
+                  UIApplication.shared.connectedScenes.count == sceneCountBefore
+            else { return }
+            NSLog("HomeSensorPlot: openWindow produced no window, requesting a scene")
+            requestNewScene()
+        }
+    }
+
+    private static func requestNewScene() {
         NSLog("HomeSensorPlot: showMainWindow creating a new scene session")
         let activity = NSUserActivity(activityType: "com.cayla.HomeSensorPlot.openMainWindow")
         UIApplication.shared.requestSceneSessionActivation(
@@ -71,28 +132,6 @@ enum CatalystWindowConfigurator {
         ) { error in
             NSLog("HomeSensorPlot: create scene failed: %@", error.localizedDescription)
         }
-        for delay in [0.15, 0.4, 0.8, 1.2] {
-            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-                if revealAllWindows() {
-                    configure()
-                }
-            }
-        }
-    }
-
-    @discardableResult
-    private static func revealAllWindows() -> Bool {
-        var found = false
-        for scene in UIApplication.shared.connectedScenes {
-            guard let windowScene = scene as? UIWindowScene else { continue }
-            for window in windowScene.windows {
-                found = true
-                window.isHidden = false
-                window.alpha = 1
-                window.makeKeyAndVisible()
-            }
-        }
-        return found
     }
 
     static func allowResizing() {
@@ -103,50 +142,107 @@ enum CatalystWindowConfigurator {
         }
     }
 
-    static func rememberCurrentSize() {
-        guard let size = currentWindowSize() else { return }
-        persist(size: size, debounce: true)
-    }
+    /// Apply the saved frame only while there is a single content scene.
+    /// Extra windows keep the frame macOS gave them.
+    private static func applyStoredFrameIfNeeded() {
+        guard !didApplyRestoredFrame else { return }
+        let scenes = contentScenes()
+        guard scenes.count == 1,
+              let windowScene = scenes.first,
+              let window = largestContentWindow(in: windowScene)
+        else { return }
+        window.isHidden = false
+        window.makeKeyAndVisible()
 
-    private static func applyStoredOrDefaultSize() {
-        let size = storedSize() ?? defaultSize
-        for scene in UIApplication.shared.connectedScenes {
-            guard let windowScene = scene as? UIWindowScene else { continue }
-            let origin = windowScene.windows.first?.frame.origin ?? .zero
-            let frame = CGRect(origin: origin, size: clamped(size))
-            let preferences = UIWindowScene.GeometryPreferences.Mac(systemFrame: frame)
-            windowScene.requestGeometryUpdate(preferences) { error in
-                NSLog("HomeSensorPlot: window geometry update failed: %@", error.localizedDescription)
-            }
-            didApplyRestoredSize = true
-        }
-    }
-
-    private static func storedSize() -> CGSize? {
-        let defaults = UserDefaults.standard
-        guard defaults.object(forKey: widthKey) != nil,
-              defaults.object(forKey: heightKey) != nil
-        else { return nil }
-        return CGSize(
-            width: defaults.double(forKey: widthKey),
-            height: defaults.double(forKey: heightKey)
-        )
-    }
-
-    private static func persist(size: CGSize, debounce: Bool) {
-        let clampedSize = clamped(size)
-        let save = {
-            UserDefaults.standard.set(clampedSize.width, forKey: widthKey)
-            UserDefaults.standard.set(clampedSize.height, forKey: heightKey)
-        }
-        guard debounce else {
-            save()
+        let saved = pendingRestoreFrame ?? WindowFrameStore.load()
+        let size = clamped(saved?.size ?? defaultSize)
+        let current = windowScene.effectiveGeometry.systemFrame
+        let origin = saved?.origin ?? current.origin
+        let frame = CGRect(origin: origin, size: size)
+        if !current.isNull, framesMatch(current, frame) {
+            didApplyRestoredFrame = true
+            NSLog("HomeSensorPlot: window frame already %@", NSCoder.string(for: current))
             return
         }
-        saveWorkItem?.cancel()
-        let work = DispatchWorkItem(block: save)
-        saveWorkItem = work
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4, execute: work)
+        guard restoreAttempts < 4 else {
+            didApplyRestoredFrame = true
+            NSLog("HomeSensorPlot: giving up window frame restore at %@", NSCoder.string(for: current))
+            return
+        }
+        let unplaced = saved == nil
+            && (current.isNull || current.width < minimumSize.width || current.height < minimumSize.height)
+        guard !unplaced else { return }
+
+        restoreAttempts += 1
+        NSLog(
+            "HomeSensorPlot: restoring window frame %@ (currently %@)",
+            NSCoder.string(for: frame),
+            NSCoder.string(for: current)
+        )
+        let preferences = UIWindowScene.GeometryPreferences.Mac(systemFrame: frame)
+        windowScene.requestGeometryUpdate(preferences) { error in
+            NSLog("HomeSensorPlot: window geometry update failed: %@", error.localizedDescription)
+        }
+    }
+
+    /// Big enough to be the app window, not a keyboard or text-effects window.
+    private static func isContentWindow(_ window: UIWindow) -> Bool {
+        window.bounds.width >= 400 && window.bounds.height >= 300
+    }
+
+    private static func isForeground(_ scene: UIWindowScene) -> Bool {
+        switch scene.activationState {
+        case .foregroundActive, .foregroundInactive:
+            return true
+        default:
+            return false
+        }
+    }
+
+    /// On screen right now. A closed window stays in `connectedScenes` at its last size.
+    private static func visibleContentWindow() -> UIWindow? {
+        let windows = contentScenes()
+            .filter(isForeground)
+            .flatMap { $0.windows.filter { isContentWindow($0) && !$0.isHidden } }
+        return windows.max {
+            ($0.bounds.width * $0.bounds.height) < ($1.bounds.width * $1.bounds.height)
+        }
+    }
+
+    private static func activationLabel(_ state: UIScene.ActivationState) -> String {
+        switch state {
+        case .unattached: return "unattached"
+        case .foregroundActive: return "foregroundActive"
+        case .foregroundInactive: return "foregroundInactive"
+        case .background: return "background"
+        @unknown default: return "unknown"
+        }
+    }
+
+    private static func contentScenes() -> [UIWindowScene] {
+        UIApplication.shared.connectedScenes.compactMap { scene in
+            guard let windowScene = scene as? UIWindowScene else { return nil }
+            return windowScene.windows.contains(where: isContentWindow) ? windowScene : nil
+        }
+    }
+
+    private static func largestContentWindow(in windowScene: UIWindowScene? = nil) -> UIWindow? {
+        let windows: [UIWindow]
+        if let windowScene {
+            windows = windowScene.windows.filter(isContentWindow)
+        } else {
+            windows = contentScenes().flatMap { $0.windows.filter(isContentWindow) }
+        }
+        return windows.max {
+            ($0.bounds.width * $0.bounds.height) < ($1.bounds.width * $1.bounds.height)
+        }
+    }
+
+    private static func framesMatch(_ lhs: CGRect, _ rhs: CGRect) -> Bool {
+        abs(lhs.origin.x - rhs.origin.x) < 1
+            && abs(lhs.origin.y - rhs.origin.y) < 1
+            && abs(lhs.width - rhs.width) < 1
+            && abs(lhs.height - rhs.height) < 1
     }
 
     private static func clamped(_ size: CGSize) -> CGSize {
@@ -156,34 +252,5 @@ enum CatalystWindowConfigurator {
         )
     }
 
-    private static func currentWindowSize() -> CGSize? {
-        for scene in UIApplication.shared.connectedScenes {
-            guard let windowScene = scene as? UIWindowScene,
-                  let window = windowScene.windows.first(where: \.isKeyWindow)
-                    ?? windowScene.windows.first
-            else { continue }
-            let size = window.bounds.size
-            if size.width > 1, size.height > 1 { return size }
-        }
-        return nil
-    }
-}
-
-/// Invisible view that reports UIWindow size changes so we can persist them.
-struct CatalystWindowSizeObserver: UIViewRepresentable {
-    final class View: UIView {
-        override func didMoveToWindow() {
-            super.didMoveToWindow()
-            CatalystWindowConfigurator.rememberCurrentSize()
-        }
-
-        override func layoutSubviews() {
-            super.layoutSubviews()
-            CatalystWindowConfigurator.rememberCurrentSize()
-        }
-    }
-
-    func makeUIView(context: Context) -> View { View() }
-    func updateUIView(_ uiView: View, context: Context) {}
 }
 #endif
