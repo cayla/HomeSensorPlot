@@ -2,7 +2,7 @@
 
 Always-on Mac app (Mac Catalyst) that discovers HomeKit sensors, stores readings locally, charts them with time ranges, and optionally exposes a localhost Prometheus exporter.
 
-This is an AI authoried app. I work in software engineering and I think the quality is good enough for many use cases. This project is to scratch a personal itch. I make it available in case anyone else would appreciate it.
+This is an AI authored app. I work in software engineering and I think the quality is good enough for many use cases including this one. This project is to scratch a personal itch. I make it available in case anyone else would appreciate seeing or using it.
 
 ## Why Mac Catalyst?
 
