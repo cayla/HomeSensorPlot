@@ -133,19 +133,19 @@ final class ChartInteractionTests: XCTestCase {
         )
     }
 
-    func testLeadingAnchorIsKeptAndMarked() {
-        let windowStart = date(minutes: 60)
+    func testLeadingAnchorIsPlacedOnTheWindowEdge() {
         let points = ChartSeriesAssembly.seriesPoints(
             sensorID: "outdoor",
             label: "Outdoor · weather",
-            windowStart: windowStart,
-            inWindow: [reading(minutes: 90, value: 12)],
-            anchor: reading(minutes: 0, value: 10),
+            windowStart: date(minutes: 40),
+            inWindow: [reading(minutes: 100, value: 100)],
+            anchor: reading(minutes: 0, value: 0),
             timestamp: { $0.timestamp },
             value: { $0.value }
         )
-        XCTAssertEqual(points.map(\.isAnchor), [true, false])
-        XCTAssertEqual(points.map(\.value), [10, 12])
+        XCTAssertEqual(points.map(\.timestamp), [date(minutes: 40), date(minutes: 100)])
+        XCTAssertEqual(points.map(\.value), [40, 100])
+        XCTAssertFalse(points.contains(where: \.isAnchor))
     }
 
     func testEmptyWindowDropsTheAnchor() {
@@ -159,6 +159,23 @@ final class ChartInteractionTests: XCTestCase {
             value: { $0.value }
         )
         XCTAssertTrue(points.isEmpty)
+    }
+
+    func testAnchorAcrossARealGapIsDropped() {
+        let points = ChartSeriesAssembly.seriesPoints(
+            sensorID: "room",
+            label: "Kitchen",
+            windowStart: date(minutes: 99),
+            inWindow: [
+                reading(minutes: 100, value: 1),
+                reading(minutes: 101, value: 2),
+                reading(minutes: 102, value: 3),
+            ],
+            anchor: reading(minutes: 0, value: 0),
+            timestamp: { $0.timestamp },
+            value: { $0.value }
+        )
+        XCTAssertEqual(points.map(\.timestamp), [100, 101, 102].map { date(minutes: $0) })
     }
 
     func testAnchorInsideTheWindowIsARealSample() {

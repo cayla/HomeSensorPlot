@@ -161,7 +161,10 @@ enum ChartInteraction {
     }
 }
 
-/// In-window samples plus the one sample before the left edge, so a line can enter the plot.
+/// In-window samples, plus the visible piece of the segment that crosses the left edge.
+///
+/// The earlier sample is not plotted. A mark outside the scale makes Swift Charts
+/// refit the axis around it, which blows up an hour-long domain.
 enum ChartSeriesAssembly {
     static func seriesPoints<S>(
         sensorID: String,
@@ -172,26 +175,55 @@ enum ChartSeriesAssembly {
         timestamp: (S) -> Date,
         value: (S) -> Double
     ) -> [ChartSeriesPoint] {
-        guard let first = inWindow.first else { return [] }
-        var rows: [(sample: S, isAnchor: Bool)] = []
+        guard !inWindow.isEmpty else { return [] }
+        var times = inWindow.map(timestamp)
+        var values = inWindow.map(value)
         if let anchor {
             let anchorTime = timestamp(anchor)
-            if anchorTime < timestamp(first) {
-                rows.append((anchor, anchorTime < windowStart))
+            let anchorValue = value(anchor)
+            if anchorTime < times[0] {
+                if anchorTime >= windowStart {
+                    times.insert(anchorTime, at: 0)
+                    values.insert(anchorValue, at: 0)
+                } else if connects(anchorTime: anchorTime, to: times) {
+                    let edge = interpolated(
+                        from: (anchorTime, anchorValue),
+                        to: (times[0], values[0]),
+                        at: windowStart
+                    )
+                    if windowStart < times[0] {
+                        times.insert(windowStart, at: 0)
+                        values.insert(edge, at: 0)
+                    }
+                }
             }
         }
-        for sample in inWindow {
-            rows.append((sample, false))
-        }
-        return rows.map { row in
+        return zip(times, values).map { time, sampleValue in
             ChartSeriesPoint(
                 sensorID: sensorID,
                 label: label,
-                timestamp: timestamp(row.sample),
-                value: value(row.sample),
-                isAnchor: row.isAnchor
+                timestamp: time,
+                value: sampleValue,
+                isAnchor: false
             )
         }
+    }
+
+    /// Same rule as the drawn line: a gap wider than the series' usual spacing stays broken.
+    private static func connects(anchorTime: Date, to times: [Date]) -> Bool {
+        let layout = SeriesGaps.layout(timestamps: [anchorTime] + times)
+        return layout.segments.count > 1 && layout.segments[0] == layout.segments[1]
+    }
+
+    private static func interpolated(
+        from start: (Date, Double),
+        to end: (Date, Double),
+        at time: Date
+    ) -> Double {
+        let span = end.0.timeIntervalSince(start.0)
+        guard span > 0 else { return end.1 }
+        let fraction = min(max(time.timeIntervalSince(start.0) / span, 0), 1)
+        return start.1 + fraction * (end.1 - start.1)
     }
 }
 

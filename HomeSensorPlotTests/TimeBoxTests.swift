@@ -49,6 +49,20 @@ final class TimeBoxTests: XCTestCase {
         XCTAssertEqual(window.end, now.addingTimeInterval(60))
     }
 
+    func testPlottedDomainEndsAtNow() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let hour = TimeBox.thisHour.window(relativeTo: now, calendar: calendar)
+        let plotted = hour.plottedDomain(now: now)
+        XCTAssertEqual(plotted.lowerBound, hour.start)
+        XCTAssertEqual(plotted.upperBound, now)
+        XCTAssertLessThan(now, hour.end)
+
+        let trailing = TimeBox.lastHour.window(relativeTo: now).plottedDomain(now: now)
+        XCTAssertEqual(trailing.lowerBound, now.addingTimeInterval(-3600))
+        XCTAssertEqual(trailing.upperBound, now)
+    }
+
     func testSampleEndStopsAtNow() {
         let window = ChartTimeWindow(start: now.addingTimeInterval(-3600), end: now.addingTimeInterval(3600))
         XCTAssertEqual(window.sampleEnd(now: now), now)

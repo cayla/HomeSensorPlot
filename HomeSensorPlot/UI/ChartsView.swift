@@ -343,7 +343,7 @@ private struct CategoryDetailView: View {
                         domain: seriesLabels,
                         range: seriesLabels.map { paletteColor(for: $0) }
                     )
-                    .chartXScale(domain: xDomain)
+                    .chartXScale(domain: xDomain, range: .plotDimension(padding: 0))
                     .chartYScale(domain: yAxisDomain)
                     .chartLegend(.hidden)
                     .chartXAxis {
@@ -500,17 +500,12 @@ private struct CategoryDetailView: View {
         tipPosition = CGPoint(x: tipX, y: tipY)
     }
 
-    /// The preset's window, not the span of whatever samples happened to fall inside it.
+    /// Preset start through now. The upcoming calendar boundary stays off the axis.
     private var xDomain: ClosedRange<Date> {
-        let window = appState.timeBox.window(customStart: appState.customStart)
-        if window.end > window.start {
-            return window.start...window.end
-        }
-        return window.start...window.start.addingTimeInterval(60)
+        appState.timeBox.window(customStart: appState.customStart).plottedDomain()
     }
 
     /// Percent metrics keep a fixed 0…100 domain; states stay on 0/1; everything else zooms to data.
-    /// The leading anchor is outside the window and does not stretch the scale.
     private var yAxisDomain: ClosedRange<Double> {
         ChartAxisKind.of(category).domain(
             values: enabledPoints.filter { !$0.isAnchor }.map(\.value)

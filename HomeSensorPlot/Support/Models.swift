@@ -116,14 +116,20 @@ enum CollectorStatus: Equatable, Sendable {
     }
 }
 
-/// Visible chart domain. `end` is the right edge, including a calendar boundary still in the future.
+/// Logical range for a preset. Calendar windows still end on the upcoming boundary.
 struct ChartTimeWindow: Equatable, Sendable {
     var start: Date
     var end: Date
 
-    /// Stored samples stop at now. A calendar window keeps its future edge on the axis.
+    /// Stored samples stop at now.
     func sampleEnd(now: Date) -> Date {
         min(now, end)
+    }
+
+    /// Axis domain. The right edge is now, so a short calendar window is not a strip of data beside an empty future.
+    func plottedDomain(now: Date = .now) -> ClosedRange<Date> {
+        let visibleEnd = max(sampleEnd(now: now), start.addingTimeInterval(1))
+        return start...visibleEnd
     }
 }
 
