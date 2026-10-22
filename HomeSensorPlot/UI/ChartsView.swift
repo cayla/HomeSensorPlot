@@ -243,8 +243,7 @@ private struct CategoryDetailView: View {
                                 subtitle: outdoorSubtitle,
                                 unit: nil,
                                 value: outdoorLatestText,
-                                color: activeColorBySensorID[AppState.outdoorWeatherSeriesID],
-                                dashed: true
+                                color: activeColorBySensorID[AppState.outdoorWeatherSeriesID]
                             )
                         }
                         .toggleStyle(.switch)
@@ -268,8 +267,7 @@ private struct CategoryDetailView: View {
                                 subtitle: sensor.roomName.isEmpty ? sensor.homeName : sensor.roomName,
                                 unit: category != .temperature && !category.isStateCategory ? sensor.unit : nil,
                                 value: sensor.lastValue.map { formatSidebarValue($0, unit: sensor.unit) },
-                                color: activeColorBySensorID[sensor.id],
-                                dashed: false
+                                color: activeColorBySensorID[sensor.id]
                             )
                         }
                         .toggleStyle(.switch)
@@ -643,12 +641,11 @@ private struct CategoryDetailView: View {
         subtitle: String,
         unit: String?,
         value: String?,
-        color: Color?,
-        dashed: Bool
+        color: Color?
     ) -> some View {
         HStack(alignment: .top, spacing: 8) {
-            SeriesSwatch(color: color ?? Color.secondary.opacity(0.45), dashed: dashed)
-                .padding(.top, 4)
+            SeriesSwatch(color: color ?? Color.secondary.opacity(0.45))
+                .padding(.top, 3)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.caption.weight(.semibold))
@@ -782,24 +779,14 @@ private struct CategoryDetailView: View {
     }
 }
 
-/// Short stroke sample. The sidebar name stays in the label color; this mark carries the series color.
+/// Color dab for a sidebar row. The name stays in the label color.
 private struct SeriesSwatch: View {
     var color: Color
-    var dashed: Bool
 
     var body: some View {
-        Canvas { context, size in
-            var path = Path()
-            let y = size.height / 2
-            path.move(to: CGPoint(x: 0, y: y))
-            path.addLine(to: CGPoint(x: size.width, y: y))
-            context.stroke(
-                path,
-                with: .color(color),
-                style: StrokeStyle(lineWidth: 2, lineCap: .round, dash: dashed ? [3, 2] : [])
-            )
-        }
-        .frame(width: 14, height: 10)
-        .accessibilityHidden(true)
+        Circle()
+            .fill(color)
+            .frame(width: 8, height: 8)
+            .accessibilityHidden(true)
     }
 }
