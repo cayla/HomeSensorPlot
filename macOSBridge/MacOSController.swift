@@ -55,12 +55,11 @@ public final class MacOSController: NSObject, NSMenuDelegate {
 
         statusMenuItem.isEnabled = false
         exporterMenuItem.isEnabled = false
-        menu.addItem(statusMenuItem)
-        menu.addItem(exporterMenuItem)
-        menu.addItem(.separator())
 
         menu.addItem(menuItem("Open HomeSensorPlot", action: #selector(openWindow), key: "o"))
-        menu.addItem(menuItem("Collect Now", action: #selector(collectNow), key: "r"))
+        menu.addItem(.separator())
+        menu.addItem(statusMenuItem)
+        menu.addItem(exporterMenuItem)
         menu.addItem(.separator())
         menu.addItem(menuItem("Quit HomeSensorPlot", action: #selector(quit), key: "q"))
     }
@@ -74,10 +73,6 @@ public final class MacOSController: NSObject, NSMenuDelegate {
     @objc private func openWindow() {
         NSApp.activate(ignoringOtherApps: true)
         NotificationCenter.default.post(name: MenuBarNotifications.openWindow, object: nil)
-    }
-
-    @objc private func collectNow() {
-        NotificationCenter.default.post(name: MenuBarNotifications.collectNow, object: nil)
     }
 
     @objc private func quit() {

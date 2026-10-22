@@ -127,20 +127,6 @@ enum MacOSPluginBootstrap {
 
         observers.append(
             NotificationCenter.default.addObserver(
-                forName: MenuBarNotifications.collectNow,
-                object: nil,
-                queue: .main
-            ) { _ in
-                Task { @MainActor in
-                    guard let appState else { return }
-                    await appState.collectNow()
-                    appState.pushStatusToMacBridge()
-                }
-            }
-        )
-
-        observers.append(
-            NotificationCenter.default.addObserver(
                 forName: MenuBarNotifications.quit,
                 object: nil,
                 queue: .main

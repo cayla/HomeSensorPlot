@@ -38,7 +38,8 @@ struct HomeSensorPlotApp: App {
 }
 
 #if targetEnvironment(macCatalyst)
-/// Captures SwiftUI `openWindow` while a scene exists; used as a reopen fallback.
+/// Captures SwiftUI `openWindow` while a scene exists.
+/// Used only to recreate the window after the last one was closed.
 enum WindowOpenRegistrarStore {
     nonisolated(unsafe) static var openMain: (() -> Void)?
 }

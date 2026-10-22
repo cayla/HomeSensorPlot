@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Compact status/actions strip inside the main window (not the macOS menu bar).
+/// Status line inside the main window (not the macOS menu bar).
 /// The real menu bar status item lives in `macOSBridge`.
 struct MenuBarView: View {
     @EnvironmentObject private var appState: AppState
@@ -14,11 +14,6 @@ struct MenuBarView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Spacer()
-            Button("Collect Now") {
-                Task { await appState.collectNow() }
-            }
-            .buttonStyle(.bordered)
-            .disabled(appState.collector.isCollecting)
         }
         .padding(.horizontal, 4)
     }
