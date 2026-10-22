@@ -9,11 +9,13 @@ public final class MacOSController: NSObject, NSMenuDelegate {
     private let menu = NSMenu()
     private let statusMenuItem = NSMenuItem(title: "Starting…", action: nil, keyEquivalent: "")
     private let exporterMenuItem = NSMenuItem(title: "Exporter —", action: nil, keyEquivalent: "")
+    private var frameSaveWorkItem: DispatchWorkItem?
 
     @objc public required override init() {
         super.init()
         configureStatusItem()
         rebuildMenu()
+        observeContentWindowFrames()
         NSLog("HomeSensorPlot macOSBridge: status item created")
     }
 
@@ -98,5 +100,56 @@ public final class MacOSController: NSObject, NSMenuDelegate {
 
     @objc private func quit() {
         NotificationCenter.default.post(name: MenuBarNotifications.quit, object: nil)
+    }
+
+    /// UIKit does not relayout when a window is dragged, so the host never saw the new origin.
+    /// AppKit posts move/resize/close for the real `NSWindow`.
+    private func observeContentWindowFrames() {
+        let center = NotificationCenter.default
+        for name in [
+            NSWindow.didMoveNotification,
+            NSWindow.didResizeNotification,
+            NSWindow.willCloseNotification,
+        ] {
+            center.addObserver(self, selector: #selector(contentWindowFrameChanged(_:)), name: name, object: nil)
+        }
+    }
+
+    @objc private func contentWindowFrameChanged(_ note: Notification) {
+        guard let window = note.object as? NSWindow, isContentWindow(window) else { return }
+        if note.name == NSWindow.willCloseNotification {
+            frameSaveWorkItem?.cancel()
+            saveContentFrame(of: window)
+            return
+        }
+        frameSaveWorkItem?.cancel()
+        let work = DispatchWorkItem { [weak self, weak window] in
+            guard let self, let window else { return }
+            self.saveContentFrame(of: window)
+        }
+        frameSaveWorkItem = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25, execute: work)
+    }
+
+    private func isContentWindow(_ window: NSWindow) -> Bool {
+        window.frame.width >= 400
+            && window.frame.height >= 300
+            && window.level == .normal
+            && !window.isSheet
+    }
+
+    private func saveContentFrame(of window: NSWindow) {
+        guard let primary = NSScreen.screens.first else { return }
+        let system = WindowFrameStore.systemFrame(
+            fromAppKitFrame: window.frame,
+            primaryScreenMaxY: primary.frame.maxY
+        )
+        guard system.width >= 720, system.height >= 480 else { return }
+        WindowFrameStore.save(system)
+        NSLog(
+            "HomeSensorPlot macOSBridge: saved window frame %@ (appkit %@)",
+            NSStringFromRect(system),
+            NSStringFromRect(window.frame)
+        )
     }
 }

@@ -24,7 +24,6 @@ struct HomeSensorPlotApp: App {
             ContentView()
                 .environmentObject(appState)
                 #if targetEnvironment(macCatalyst)
-                .background(CatalystWindowSizeObserver())
                 .background(WindowOpenRegistrar())
                 .onAppear {
                     CatalystWindowConfigurator.configure()

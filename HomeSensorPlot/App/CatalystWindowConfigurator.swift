@@ -1,31 +1,29 @@
 import Foundation
 
 #if targetEnvironment(macCatalyst)
-import SwiftUI
 import UIKit
 
 enum CatalystWindowConfigurator {
-    private static let widthKey = "windowFrameWidth"
-    private static let heightKey = "windowFrameHeight"
-    private static let originXKey = "windowFrameOriginX"
-    private static let originYKey = "windowFrameOriginY"
     private static let defaultSize = CGSize(width: 1280, height: 860)
     private static let minimumSize = CGSize(width: 720, height: 480)
 
-    private static var saveWorkItem: DispatchWorkItem?
-    private static var didApplyRestoredSize = false
-    private static var suppressFrameCapture = false
+    private static var didApplyRestoredFrame = false
+    private static var restoreAttempts = 0
+    /// Captured before the new window exists, so its default placement cannot overwrite the saved origin.
+    private static var pendingRestoreFrame: CGRect?
     private static var createInFlight = false
     private static var createGeneration = 0
 
-    /// Raise resize limits. Restore the saved size once, for a single newly placed window.
+    /// Raise resize limits and put a new window back where it was last closed.
+    /// The system's own placement lands after the first layout, so this retries briefly.
     static func configure() {
         allowResizing()
-        applyStoredSizeIfAlone()
-        // The first layout pass sometimes has no real frame yet.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-            allowResizing()
-            applyStoredSizeIfAlone()
+        applyStoredFrameIfNeeded()
+        for delay in [0.25, 0.6, 1.1] {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                allowResizing()
+                applyStoredFrameIfNeeded()
+            }
         }
     }
 
@@ -101,7 +99,9 @@ enum CatalystWindowConfigurator {
 
     private static func beginCreatingWindow(generation: Int, sceneCountBefore: Int) {
         guard generation == createGeneration else { return }
-        didApplyRestoredSize = false
+        didApplyRestoredFrame = false
+        restoreAttempts = 0
+        pendingRestoreFrame = WindowFrameStore.load()
         let canOpenViaSwiftUI = WindowOpenRegistrarStore.openMain != nil
         if canOpenViaSwiftUI {
             NSLog("HomeSensorPlot: showMainWindow via openWindow(id: main)")
@@ -142,63 +142,44 @@ enum CatalystWindowConfigurator {
         }
     }
 
-    static func rememberCurrentFrame() {
-        guard !suppressFrameCapture else { return }
-        saveWorkItem?.cancel()
-        let work = DispatchWorkItem {
-            guard !suppressFrameCapture, let frame = currentSystemFrame() else { return }
-            let defaults = UserDefaults.standard
-            defaults.set(frame.size.width, forKey: widthKey)
-            defaults.set(frame.size.height, forKey: heightKey)
-            defaults.set(frame.origin.x, forKey: originXKey)
-            defaults.set(frame.origin.y, forKey: originYKey)
-        }
-        saveWorkItem = work
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4, execute: work)
-    }
-
-    /// Apply the saved frame only when there is a single content scene that has not
-    /// already been restored. Extra windows keep the frame macOS gave them.
-    private static func applyStoredSizeIfAlone() {
-        guard !didApplyRestoredSize else { return }
+    /// Apply the saved frame only while there is a single content scene.
+    /// Extra windows keep the frame macOS gave them.
+    private static func applyStoredFrameIfNeeded() {
+        guard !didApplyRestoredFrame else { return }
         let scenes = contentScenes()
         guard scenes.count == 1,
               let windowScene = scenes.first,
               largestContentWindow(in: windowScene) != nil
         else { return }
-        applyStoredSize(to: windowScene)
-    }
 
-    private static func applyStoredSize(to windowScene: UIWindowScene) {
-        let size = clamped(storedSize() ?? defaultSize)
+        let saved = pendingRestoreFrame ?? WindowFrameStore.load()
+        let size = clamped(saved?.size ?? defaultSize)
         let current = windowScene.effectiveGeometry.systemFrame
-        let origin = storedOrigin() ?? current.origin
+        let origin = saved?.origin ?? current.origin
         let frame = CGRect(origin: origin, size: size)
         if !current.isNull, framesMatch(current, frame) {
-            didApplyRestoredSize = true
+            didApplyRestoredFrame = true
+            NSLog("HomeSensorPlot: window frame already %@", NSCoder.string(for: current))
             return
         }
-        // No saved origin yet, and this window has not been given a frame. Wait for
-        // the retry instead of pinning it to (0, 0).
-        let unplaced = storedOrigin() == nil
-            && (current.isNull || current.origin == .zero)
-            && (current.width < minimumSize.width || current.height < minimumSize.height)
+        guard restoreAttempts < 4 else {
+            didApplyRestoredFrame = true
+            NSLog("HomeSensorPlot: giving up window frame restore at %@", NSCoder.string(for: current))
+            return
+        }
+        let unplaced = saved == nil
+            && (current.isNull || current.width < minimumSize.width || current.height < minimumSize.height)
         guard !unplaced else { return }
 
-        NSLog("HomeSensorPlot: restoring window frame %@", NSCoder.string(for: frame))
-        suppressFrameCapture = true
+        restoreAttempts += 1
+        NSLog(
+            "HomeSensorPlot: restoring window frame %@ (currently %@)",
+            NSCoder.string(for: frame),
+            NSCoder.string(for: current)
+        )
         let preferences = UIWindowScene.GeometryPreferences.Mac(systemFrame: frame)
         windowScene.requestGeometryUpdate(preferences) { error in
             NSLog("HomeSensorPlot: window geometry update failed: %@", error.localizedDescription)
-        }
-        didApplyRestoredSize = true
-        let target = frame
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-            suppressFrameCapture = false
-            // Don't let the new window's default top-left replace a saved origin
-            // if the restore has not landed yet.
-            guard let settled = currentSystemFrame(), framesMatch(settled, target) else { return }
-            rememberCurrentFrame()
         }
     }
 
@@ -262,36 +243,6 @@ enum CatalystWindowConfigurator {
             && abs(lhs.height - rhs.height) < 1
     }
 
-    private static func storedOrigin() -> CGPoint? {
-        let defaults = UserDefaults.standard
-        guard defaults.object(forKey: originXKey) != nil,
-              defaults.object(forKey: originYKey) != nil
-        else { return nil }
-        return CGPoint(x: defaults.double(forKey: originXKey), y: defaults.double(forKey: originYKey))
-    }
-
-    /// System frame of the foreground content window. This is the coordinate space
-    /// `GeometryPreferences.Mac.systemFrame` writes back into.
-    private static func currentSystemFrame() -> CGRect? {
-        let scenes = contentScenes().filter(isForeground)
-        let scene = scenes.first { $0.windows.contains(where: \.isKeyWindow) } ?? scenes.first
-        guard let scene else { return nil }
-        let frame = scene.effectiveGeometry.systemFrame
-        guard frame.width >= minimumSize.width, frame.height >= minimumSize.height else { return nil }
-        return frame
-    }
-
-    private static func storedSize() -> CGSize? {
-        let defaults = UserDefaults.standard
-        guard defaults.object(forKey: widthKey) != nil,
-              defaults.object(forKey: heightKey) != nil
-        else { return nil }
-        return CGSize(
-            width: defaults.double(forKey: widthKey),
-            height: defaults.double(forKey: heightKey)
-        )
-    }
-
     private static func clamped(_ size: CGSize) -> CGSize {
         CGSize(
             width: max(minimumSize.width, size.width),
@@ -299,23 +250,5 @@ enum CatalystWindowConfigurator {
         )
     }
 
-}
-
-/// Invisible view that reports UIWindow size changes so we can persist them.
-struct CatalystWindowSizeObserver: UIViewRepresentable {
-    final class View: UIView {
-        override func didMoveToWindow() {
-            super.didMoveToWindow()
-            CatalystWindowConfigurator.rememberCurrentFrame()
-        }
-
-        override func layoutSubviews() {
-            super.layoutSubviews()
-            CatalystWindowConfigurator.rememberCurrentFrame()
-        }
-    }
-
-    func makeUIView(context: Context) -> View { View() }
-    func updateUIView(_ uiView: View, context: Context) {}
 }
 #endif
