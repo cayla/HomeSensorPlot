@@ -72,6 +72,27 @@ public final class MacOSController: NSObject, NSMenuDelegate {
 
     @objc private func openWindow() {
         NSApp.activate(ignoringOtherApps: true)
+        // UIKit keeps a closed Catalyst window in `connectedScenes` at its last size.
+        // Ordering that forward flickers. AppKit's window list is the one that matches
+        // what is actually on screen.
+        let candidates = NSApp.windows.filter { window in
+            window.frame.width >= 400
+                && window.frame.height >= 300
+                && window.level == .normal
+                && !window.isSheet
+        }
+        if let window = candidates.first(where: { $0.isVisible || $0.isMiniaturized }) {
+            NSLog(
+                "HomeSensorPlot macOSBridge: ordering existing window front %@",
+                NSStringFromRect(window.frame)
+            )
+            if window.isMiniaturized {
+                window.deminiaturize(nil)
+            }
+            window.makeKeyAndOrderFront(nil)
+            return
+        }
+        NSLog("HomeSensorPlot macOSBridge: no visible window, asking the host to create one")
         NotificationCenter.default.post(name: MenuBarNotifications.openWindow, object: nil)
     }
 
