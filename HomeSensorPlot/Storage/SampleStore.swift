@@ -79,17 +79,7 @@ final class SampleStore: @unchecked Sendable {
                 unit = excluded.unit,
                 auto_discovered = excluded.auto_discovered
             """) { stmt in
-            bindText(stmt, 1, sensor.id)
-            bindText(stmt, 2, sensor.homeName)
-            bindText(stmt, 3, sensor.roomName)
-            bindText(stmt, 4, sensor.accessoryName)
-            bindText(stmt, 5, sensor.serviceName)
-            bindText(stmt, 6, sensor.characteristicType)
-            bindText(stmt, 7, sensor.metricName)
-            bindText(stmt, 8, sensor.unit)
-            sqlite3_bind_int(stmt, 9, sensor.isHidden ? 1 : 0)
-            sqlite3_bind_int(stmt, 10, sensor.isBlocked ? 1 : 0)
-            sqlite3_bind_int(stmt, 11, sensor.autoDiscovered ? 1 : 0)
+            bindSensor(stmt, sensor)
         }
     }
 
@@ -181,33 +171,25 @@ final class SampleStore: @unchecked Sendable {
     func insertSamples(_ samples: [(sensorID: String, timestamp: Date, value: Double)]) throws {
         guard !samples.isEmpty else { return }
         try queue.sync {
-            try exec("BEGIN IMMEDIATE")
-            var succeeded = false
-            defer {
-                if succeeded {
-                    try? exec("COMMIT")
-                } else {
-                    try? exec("ROLLBACK")
+            try transaction {
+                let sql = "INSERT INTO samples (sensor_id, ts, value) VALUES (?, ?, ?)"
+                var stmt: OpaquePointer?
+                guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+                    throw SampleStoreError.prepareFailed(lastErrorMessage())
                 }
-            }
-            let sql = "INSERT INTO samples (sensor_id, ts, value) VALUES (?, ?, ?)"
-            var stmt: OpaquePointer?
-            guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
-                throw SampleStoreError.prepareFailed(lastErrorMessage())
-            }
-            defer { sqlite3_finalize(stmt) }
+                defer { sqlite3_finalize(stmt) }
 
-            for sample in samples {
-                sqlite3_reset(stmt)
-                sqlite3_clear_bindings(stmt)
-                bindText(stmt, 1, sample.sensorID)
-                sqlite3_bind_double(stmt, 2, sample.timestamp.timeIntervalSince1970)
-                sqlite3_bind_double(stmt, 3, sample.value)
-                guard sqlite3_step(stmt) == SQLITE_DONE else {
-                    throw SampleStoreError.stepFailed(lastErrorMessage())
+                for sample in samples {
+                    sqlite3_reset(stmt)
+                    sqlite3_clear_bindings(stmt)
+                    bindText(stmt, 1, sample.sensorID)
+                    sqlite3_bind_double(stmt, 2, sample.timestamp.timeIntervalSince1970)
+                    sqlite3_bind_double(stmt, 3, sample.value)
+                    guard sqlite3_step(stmt) == SQLITE_DONE else {
+                        throw SampleStoreError.stepFailed(lastErrorMessage())
+                    }
                 }
             }
-            succeeded = true
         }
     }
 
@@ -272,7 +254,9 @@ final class SampleStore: @unchecked Sendable {
     func prune(retentionDays: Int) throws -> Int {
         let cutoff = Date().addingTimeInterval(-Double(retentionDays) * 86_400)
         return try queue.sync {
-            try exec("DELETE FROM samples WHERE ts < \(cutoff.timeIntervalSince1970)")
+            try writeUnlocked("DELETE FROM samples WHERE ts < ?") { stmt in
+                sqlite3_bind_double(stmt, 1, cutoff.timeIntervalSince1970)
+            }
             return Int(sqlite3_changes(db))
         }
     }
@@ -294,18 +278,10 @@ final class SampleStore: @unchecked Sendable {
     /// Deletes samples and sensor rows in this channel's database. Preferences are untouched.
     func deleteAllCollectedData() throws {
         try queue.sync {
-            try exec("BEGIN IMMEDIATE")
-            var succeeded = false
-            defer {
-                if succeeded {
-                    try? exec("COMMIT")
-                } else {
-                    try? exec("ROLLBACK")
-                }
+            try transaction {
+                try exec("DELETE FROM samples")
+                try exec("DELETE FROM sensors")
             }
-            try exec("DELETE FROM samples")
-            try exec("DELETE FROM sensors")
-            succeeded = true
         }
     }
 
@@ -313,32 +289,24 @@ final class SampleStore: @unchecked Sendable {
     func rebind(_ pairs: [SensorContinuityPair]) throws {
         guard !pairs.isEmpty else { return }
         try queue.sync {
-            try exec("BEGIN IMMEDIATE")
-            var succeeded = false
-            defer {
-                if succeeded {
-                    try? exec("COMMIT")
-                } else {
-                    try? exec("ROLLBACK")
+            try transaction {
+                for pair in pairs {
+                    let flags = try hiddenAndBlocked(sensorID: pair.existing.id)
+                    var sensor = pair.discovered
+                    sensor.isHidden = flags.hidden
+                    sensor.isBlocked = flags.blocked
+                    try insertSensorUnlocked(sensor)
+                    try writeUnlocked(
+                        "UPDATE samples SET sensor_id = ? WHERE sensor_id = ?"
+                    ) { stmt in
+                        bindText(stmt, 1, sensor.id)
+                        bindText(stmt, 2, pair.existing.id)
+                    }
+                    try writeUnlocked("DELETE FROM sensors WHERE id = ?") { stmt in
+                        bindText(stmt, 1, pair.existing.id)
+                    }
                 }
             }
-            for pair in pairs {
-                let flags = try hiddenAndBlocked(sensorID: pair.existing.id)
-                var sensor = pair.discovered
-                sensor.isHidden = flags.hidden
-                sensor.isBlocked = flags.blocked
-                try insertSensorUnlocked(sensor)
-                try writeUnlocked(
-                    "UPDATE samples SET sensor_id = ? WHERE sensor_id = ?"
-                ) { stmt in
-                    bindText(stmt, 1, sensor.id)
-                    bindText(stmt, 2, pair.existing.id)
-                }
-                try writeUnlocked("DELETE FROM sensors WHERE id = ?") { stmt in
-                    bindText(stmt, 1, pair.existing.id)
-                }
-            }
-            succeeded = true
         }
     }
 
@@ -422,6 +390,21 @@ final class SampleStore: @unchecked Sendable {
             """)
     }
 
+    /// Caller must already be on `queue`.
+    private func transaction(_ work: () throws -> Void) throws {
+        try exec("BEGIN IMMEDIATE")
+        var succeeded = false
+        defer {
+            if succeeded {
+                try? exec("COMMIT")
+            } else {
+                try? exec("ROLLBACK")
+            }
+        }
+        try work()
+        succeeded = true
+    }
+
     private func exec(_ sql: String) throws {
         var errorMessage: UnsafeMutablePointer<CChar>?
         guard sqlite3_exec(db, sql, nil, nil, &errorMessage) == SQLITE_OK else {
@@ -477,17 +460,7 @@ final class SampleStore: @unchecked Sendable {
                 characteristic_type, metric_name, unit, is_hidden, is_blocked, auto_discovered
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """) { stmt in
-            bindText(stmt, 1, sensor.id)
-            bindText(stmt, 2, sensor.homeName)
-            bindText(stmt, 3, sensor.roomName)
-            bindText(stmt, 4, sensor.accessoryName)
-            bindText(stmt, 5, sensor.serviceName)
-            bindText(stmt, 6, sensor.characteristicType)
-            bindText(stmt, 7, sensor.metricName)
-            bindText(stmt, 8, sensor.unit)
-            sqlite3_bind_int(stmt, 9, sensor.isHidden ? 1 : 0)
-            sqlite3_bind_int(stmt, 10, sensor.isBlocked ? 1 : 0)
-            sqlite3_bind_int(stmt, 11, sensor.autoDiscovered ? 1 : 0)
+            bindSensor(stmt, sensor)
         }
     }
 
@@ -502,6 +475,20 @@ final class SampleStore: @unchecked Sendable {
         guard sqlite3_step(stmt) == SQLITE_DONE else {
             throw SampleStoreError.stepFailed(lastErrorMessage())
         }
+    }
+
+    private func bindSensor(_ stmt: OpaquePointer, _ sensor: SensorRecord) {
+        bindText(stmt, 1, sensor.id)
+        bindText(stmt, 2, sensor.homeName)
+        bindText(stmt, 3, sensor.roomName)
+        bindText(stmt, 4, sensor.accessoryName)
+        bindText(stmt, 5, sensor.serviceName)
+        bindText(stmt, 6, sensor.characteristicType)
+        bindText(stmt, 7, sensor.metricName)
+        bindText(stmt, 8, sensor.unit)
+        sqlite3_bind_int(stmt, 9, sensor.isHidden ? 1 : 0)
+        sqlite3_bind_int(stmt, 10, sensor.isBlocked ? 1 : 0)
+        sqlite3_bind_int(stmt, 11, sensor.autoDiscovered ? 1 : 0)
     }
 
     private func bindText(_ stmt: OpaquePointer, _ index: Int32, _ value: String) {

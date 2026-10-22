@@ -266,7 +266,14 @@ private struct CategoryDetailView: View {
                                 title: sensor.accessoryName,
                                 subtitle: sensor.roomName.isEmpty ? sensor.homeName : sensor.roomName,
                                 unit: category != .temperature && !category.isStateCategory ? sensor.unit : nil,
-                                value: sensor.lastValue.map { formatSidebarValue($0, unit: sensor.unit) },
+                                value: sensor.lastValue.map {
+                                    ChartInteraction.sidebarText(
+                                        category: category,
+                                        value: $0,
+                                        unit: sensor.unit,
+                                        temperatureUnit: appState.settings.temperatureUnit
+                                    )
+                                },
                                 color: activeColorBySensorID[sensor.id]
                             )
                         }
@@ -439,37 +446,33 @@ private struct CategoryDetailView: View {
 
         selectedTime = time
 
-        struct Candidate {
-            var id: String
-            var point: ChartSeriesPoint
-            var distance: Double
-        }
-
-        var candidates: [Candidate] = []
-        for (sensorID, series) in buckets {
-            guard let closest = nearest(in: series.points, to: time) else { continue }
-            guard abs(closest.timestamp.timeIntervalSince(time)) <= series.matchWindow else { continue }
-            candidates.append(
-                Candidate(id: sensorID, point: closest, distance: abs(closest.value - yValue))
-            )
-        }
-        candidates.sort { $0.distance < $1.distance }
-        guard let best = candidates.first else {
+        let picks = ChartInteraction.picks(
+            series: buckets.map { entry in
+                ChartInteraction.HoverSeries(
+                    id: entry.key,
+                    samples: entry.value.points.map {
+                        ChartInteraction.Sample(timestamp: $0.timestamp, value: $0.value)
+                    },
+                    matchWindow: entry.value.matchWindow
+                )
+            },
+            time: time,
+            yValue: yValue,
+            stateCategory: category.isStateCategory
+        )
+        guard !picks.isEmpty else {
             hoverRows = []
             tipPosition = nil
             return
         }
 
-        // Include ties / near-ties (overlapping lines), Prometheus-style — no hard row cap.
-        let threshold = max(best.distance * 1.25, yValueMagnitudeThreshold(yValue))
-        let picked = candidates.filter { $0.distance <= threshold }
-
-        hoverRows = picked.map { candidate in
-            HoverRow(
-                id: candidate.id,
-                label: candidate.point.label,
-                valueText: formatHoverValue(candidate.point.value),
-                color: color(for: candidate.point.label)
+        hoverRows = picks.compactMap { pick in
+            guard let point = buckets[pick.id]?.points[pick.index] else { return nil }
+            return HoverRow(
+                id: pick.id,
+                label: point.label,
+                valueText: ChartInteraction.hoverText(category: category, value: point.value),
+                color: color(for: point.label)
             )
         }
 
@@ -485,26 +488,14 @@ private struct CategoryDetailView: View {
         tipPosition = CGPoint(x: tipX, y: tipY)
     }
 
-    private func yValueMagnitudeThreshold(_ y: Double) -> Double {
-        if category.isStateCategory { return 0.35 }
-        return max(abs(y) * 0.04, 0.75)
-    }
-
     /// Percent metrics keep a fixed 0…100 domain; states stay on 0/1; everything else zooms to data.
     private var yAxisDomain: ClosedRange<Double> {
-        switch category {
-        case .humidity, .battery, .filterLife:
-            return 0...100
-        case .contact, .lock, .motion, .occupancy, .leak, .smoke:
-            return -0.05...1.05
-        default:
-            return paddedValueDomain(enabledPoints.map(\.value))
-        }
+        ChartAxisKind.of(category).domain(values: enabledPoints.map(\.value))
     }
 
     private var yAxisMarks: some AxisContent {
-        switch category {
-        case .humidity, .battery, .filterLife:
+        switch ChartAxisKind.of(category) {
+        case .percent:
             AxisMarks(values: [0, 25, 50, 75, 100]) { value in
                 AxisGridLine()
                 AxisTick()
@@ -514,17 +505,17 @@ private struct CategoryDetailView: View {
                     }
                 }
             }
-        case .contact, .lock, .motion, .occupancy, .leak, .smoke:
+        case .state:
             AxisMarks(values: [0, 1]) { value in
                 AxisGridLine()
                 AxisTick()
                 AxisValueLabel {
                     if let v = value.as(Double.self) {
-                        Text(formatHoverValue(v))
+                        Text(ChartInteraction.hoverText(category: category, value: v))
                     }
                 }
             }
-        default:
+        case .continuous:
             AxisMarks(values: .automatic(desiredCount: 5)) { value in
                 AxisGridLine()
                 AxisTick()
@@ -535,18 +526,6 @@ private struct CategoryDetailView: View {
                 }
             }
         }
-    }
-
-    private func paddedValueDomain(_ values: [Double]) -> ClosedRange<Double> {
-        guard let minV = values.min(), let maxV = values.max() else {
-            return 0...1
-        }
-        if minV == maxV {
-            let pad = max(abs(minV) * 0.08, 1)
-            return (minV - pad)...(maxV + pad)
-        }
-        let pad = (maxV - minV) * 0.12
-        return (minV - pad)...(maxV + pad)
     }
 
     /// Enabled series with samples in range. Missing means the row stays gray.
@@ -695,29 +674,6 @@ private struct CategoryDetailView: View {
         }
     }
 
-    /// Binary search nearest sample in a time-sorted series.
-    private func nearest(in series: [ChartSeriesPoint], to time: Date) -> ChartSeriesPoint? {
-        guard !series.isEmpty else { return nil }
-        var low = 0
-        var high = series.count - 1
-        let target = time.timeIntervalSince1970
-        while low < high {
-            let mid = (low + high) / 2
-            if series[mid].timestamp.timeIntervalSince1970 < target {
-                low = mid + 1
-            } else {
-                high = mid
-            }
-        }
-        let idx = low
-        if idx == 0 { return series[0] }
-        let prev = series[idx - 1]
-        let curr = series[idx]
-        let prevDelta = abs(prev.timestamp.timeIntervalSince1970 - target)
-        let currDelta = abs(curr.timestamp.timeIntervalSince1970 - target)
-        return prevDelta <= currDelta ? prev : curr
-    }
-
     private var chartColors: [Color] {
         [
             .blue, .orange, .green, .pink, .purple, .teal, .red, .yellow,
@@ -740,43 +696,6 @@ private struct CategoryDetailView: View {
         return NumberFormatting.measurement(latest.value)
     }
 
-    /// Chart points are already in display units for temperature — no second conversion.
-    private func formatHoverValue(_ value: Double) -> String {
-        switch category {
-        case .contact:
-            return value >= 0.5 ? "open" : "closed"
-        case .lock:
-            if value >= 0.5, value < 1.5 { return "secured" }
-            if value < 0.5 { return "unsecured" }
-            return NumberFormatting.measurement(value)
-        case .motion, .occupancy, .leak, .smoke:
-            return value >= 0.5 ? "detected" : "clear"
-        default:
-            return NumberFormatting.measurement(value)
-        }
-    }
-
-    /// Sidebar uses storage units (Celsius, raw bools).
-    private func formatSidebarValue(_ value: Double, unit: String) -> String {
-        switch category {
-        case .contact:
-            return value >= 0.5 ? "open" : "closed"
-        case .lock:
-            if value >= 0.5, value < 1.5 { return "secured" }
-            if value < 0.5 { return "unsecured" }
-            return NumberFormatting.measurement(value)
-        case .motion, .occupancy, .leak, .smoke:
-            return value >= 0.5 ? "detected" : "clear"
-        case .temperature:
-            let display = appState.settings.temperatureUnit.display(fromCelsius: value)
-            return NumberFormatting.measurement(display)
-        default:
-            if unit == "bool" {
-                return value >= 0.5 ? "on" : "off"
-            }
-            return "\(NumberFormatting.measurement(value)) \(unit)"
-        }
-    }
 }
 
 /// Color dab for a sidebar row. The name stays in the label color.

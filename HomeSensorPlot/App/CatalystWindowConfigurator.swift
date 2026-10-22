@@ -38,12 +38,19 @@ enum CatalystWindowConfigurator {
         }
     }
 
-    /// Menu bar → create a window. Called only when AppKit reports nothing on screen.
-    /// A closed window still occupies a scene at its last size; discard those before
-    /// creating, or SwiftUI reuses the corpse and the new window flashes away.
+    /// Menu bar → focus the window AppKit already has, or replace a closed scene.
+    /// Called only when AppKit reports nothing on screen. A foreground UIKit window
+    /// that AppKit has not ordered front is activated in place. Destroying it and
+    /// calling `openWindow` from that scene recreates a window AppKit never shows.
+    /// Scenes that are actually gone are discarded, then a new session is requested.
     static func showMainWindow() {
         guard !createInFlight else {
             NSLog("HomeSensorPlot: showMainWindow already creating a window")
+            return
+        }
+
+        if let window = visibleContentWindow(), let scene = window.windowScene {
+            surface(window, in: scene)
             return
         }
 
@@ -51,7 +58,11 @@ enum CatalystWindowConfigurator {
         let generation = createGeneration
         let stale = contentScenes()
         if stale.isEmpty {
-            beginCreatingWindow(generation: generation, sceneCountBefore: UIApplication.shared.connectedScenes.count)
+            beginCreatingWindow(
+                generation: generation,
+                sceneCountBefore: UIApplication.shared.connectedScenes.count,
+                replacingClosedScenes: false
+            )
             return
         }
 
@@ -60,16 +71,34 @@ enum CatalystWindowConfigurator {
         for scene in stale {
             let window = largestContentWindow(in: scene)
             NSLog(
-                "HomeSensorPlot: closed scene state=%@ hidden=%d frame=%@",
+                "HomeSensorPlot: closed scene state=%@ hidden=%d frame=%@ systemFrame=%@",
                 activationLabel(scene.activationState),
                 window?.isHidden == true ? 1 : 0,
-                NSCoder.string(for: window?.frame ?? .zero)
+                NSCoder.string(for: window?.frame ?? .zero),
+                NSCoder.string(for: scene.effectiveGeometry.systemFrame)
             )
             UIApplication.shared.requestSceneSessionDestruction(scene.session, options: nil) { error in
                 NSLog("HomeSensorPlot: destroy closed scene failed: %@", error.localizedDescription)
             }
         }
-        waitForClosedScenesToLeave(staleSessions, generation: generation, attemptsLeft: 10)
+        waitForClosedScenesToLeave(staleSessions, generation: generation, attemptsLeft: 30)
+    }
+
+    private static func surface(_ window: UIWindow, in scene: UIWindowScene) {
+        NSLog(
+            "HomeSensorPlot: showMainWindow surfacing scene state=%@ systemFrame=%@",
+            activationLabel(scene.activationState),
+            NSCoder.string(for: scene.effectiveGeometry.systemFrame)
+        )
+        window.isHidden = false
+        window.makeKeyAndVisible()
+        UIApplication.shared.requestSceneSessionActivation(
+            scene.session,
+            userActivity: nil,
+            options: nil
+        ) { error in
+            NSLog("HomeSensorPlot: activate existing scene failed: %@", error.localizedDescription)
+        }
     }
 
     private static func waitForClosedScenesToLeave(
@@ -91,22 +120,31 @@ enum CatalystWindowConfigurator {
             }
             return
         }
+        if stillConnected {
+            NSLog("HomeSensorPlot: closed scenes still connected; not reusing them")
+        }
         beginCreatingWindow(
             generation: generation,
-            sceneCountBefore: UIApplication.shared.connectedScenes.count
+            sceneCountBefore: UIApplication.shared.connectedScenes.count,
+            replacingClosedScenes: true
         )
     }
 
-    private static func beginCreatingWindow(generation: Int, sceneCountBefore: Int) {
+    private static func beginCreatingWindow(
+        generation: Int,
+        sceneCountBefore: Int,
+        replacingClosedScenes: Bool
+    ) {
         guard generation == createGeneration else { return }
         didApplyRestoredFrame = false
         restoreAttempts = 0
         pendingRestoreFrame = WindowFrameStore.load()
-        let canOpenViaSwiftUI = WindowOpenRegistrarStore.openMain != nil
+        let canOpenViaSwiftUI = !replacingClosedScenes && WindowOpenRegistrarStore.openMain != nil
         if canOpenViaSwiftUI {
             NSLog("HomeSensorPlot: showMainWindow via openWindow(id: main)")
             WindowOpenRegistrarStore.openMain?()
         } else {
+            // The openWindow closure belongs to the scene we just tore down.
             requestNewScene()
         }
 
@@ -114,10 +152,8 @@ enum CatalystWindowConfigurator {
             guard generation == createGeneration else { return }
             createInFlight = false
             if visibleContentWindow() != nil { return }
-            guard canOpenViaSwiftUI,
-                  UIApplication.shared.connectedScenes.count == sceneCountBefore
-            else { return }
-            NSLog("HomeSensorPlot: openWindow produced no window, requesting a scene")
+            guard UIApplication.shared.connectedScenes.count == sceneCountBefore else { return }
+            NSLog("HomeSensorPlot: open produced no window, requesting a scene")
             requestNewScene()
         }
     }

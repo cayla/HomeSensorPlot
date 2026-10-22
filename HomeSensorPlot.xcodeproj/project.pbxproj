@@ -11,6 +11,7 @@
 		0352994D473729D84BDD4EB3 /* NumberFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 304E8D892739B82D3452D45F /* NumberFormatting.swift */; };
 		0AFBA884562DD94A10085B96 /* PrometheusListenTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 193B28701B6B700857275182 /* PrometheusListenTests.swift */; };
 		0D2B63DE473B3E7190292A54 /* SeriesDownsampleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F73812BF6D71AD04F4DCFC2F /* SeriesDownsampleTests.swift */; };
+		1665ADA59531776620DFFAC4 /* ChartInteraction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80D0E60C0AEBB4564D200C93 /* ChartInteraction.swift */; };
 		1ACFE1EEC5D56BD8FAD68B7E /* SampleAcceptanceDebouncerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F5BAF0C3A2D2FD9E6326567 /* SampleAcceptanceDebouncerTests.swift */; };
 		1FB0A66E6521A2BBD0BFF083 /* SensorCollectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CA8A3D9143090C179CCFF0D /* SensorCollectorTests.swift */; };
 		22016087DF64AC4C67A2141C /* SensorCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 039E2641B6CCCFB63B3E7456 /* SensorCategory.swift */; };
@@ -40,6 +41,7 @@
 		8DDADC3C41D628E2C0277889 /* SensorCharacteristicClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAE2225EDBB741033E7B23DB /* SensorCharacteristicClassifier.swift */; };
 		9242BEBC480C8C22A4F5A0A4 /* SupportDumpTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81CF655F034614730F8AF77C /* SupportDumpTests.swift */; };
 		92B963539F247C36350E2EC3 /* HomeKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 499D2B9164A259C18533A50C /* HomeKit.framework */; };
+		998E3BC2D8ACA40D6C809F50 /* SeriesGapsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4D30BD74E3B8C9E3FFA95C3 /* SeriesGapsTests.swift */; };
 		9A279F312DF664765CA062F4 /* CatalystWindowConfigurator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 071664DB7C7CA0BB07F11014 /* CatalystWindowConfigurator.swift */; };
 		A2C573F905B4E4C739A139BC /* SupportDump.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64257D1A9687EB562FD401DD /* SupportDump.swift */; };
 		A2DC871FD794429A943A3DD9 /* MenuBarNotifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20D353000D2FAFCC09FDBC3D /* MenuBarNotifications.swift */; };
@@ -52,12 +54,14 @@
 		C18D8547D7325DDA9D700C00 /* SensorCategoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1A505072F3ECE82B54CA099 /* SensorCategoryTests.swift */; };
 		C79AD5A7F1EE036395ECAFB3 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4D9210325A3C2ECA48D2BC1 /* AppState.swift */; };
 		D416FAA95404CDE8FA4213B2 /* SensorContinuityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3BA413B2E50610504FC247E /* SensorContinuityTests.swift */; };
+		D62A6C1DBAC790FAE6BE7397 /* FooterNotice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 391DEBC60D4C81DB4747DEA8 /* FooterNotice.swift */; };
 		D68940503ACD986BAFC8CC75 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 41012E5B1FF58DE7E653AFA8 /* PrivacyInfo.xcprivacy */; };
+		D75B881B4F3B02EA9BEDA06F /* FooterNoticeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11E7374A41F6D4FD1445EEF1 /* FooterNoticeTests.swift */; };
 		DB0DB848FD4909227DD75993 /* HomeKitSensorProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AA8C223A8A954DBEA3B99FB /* HomeKitSensorProviderTests.swift */; };
 		DC2153BDE961AF91EC76E7D8 /* SeriesDownsample.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7116E34A12D69694A7685B4 /* SeriesDownsample.swift */; };
-		3F91AB06C4E85D27A0B6C194 /* SeriesGaps.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8E4C1B07D2F49A6B5C3D8E1 /* SeriesGaps.swift */; };
-		6B0E4A93F1C85D27B4A9E0C2 /* SeriesGapsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5C27E81A4B64F09C8E1D3A7 /* SeriesGapsTests.swift */; };
 		E37DF75AA491DEF7F54B7A07 /* CoreLocation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C7B9F9A1A2DFE619EB007295 /* CoreLocation.framework */; };
+		E8A025FD1AEFD9E1F9B45998 /* ChartInteractionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA93234F7587A024C0F48FDE /* ChartInteractionTests.swift */; };
+		E91E5007FD6F34049FE5D0C2 /* SeriesGaps.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6B22F2E264D0181DD930E1E /* SeriesGaps.swift */; };
 		EA511ADD0A36C7E4D5A07AD2 /* HomeKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 499D2B9164A259C18533A50C /* HomeKit.framework */; };
 		F0FD4563E3C3DFA9DDA558C9 /* macOSBridge.bundle in Resources */ = {isa = PBXBuildFile; fileRef = BC74337EA0A277BD0B8C968C /* macOSBridge.bundle */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		FE39BE6CBAC0B618B39014FC /* SampleStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D600FCC5AB1212158670623 /* SampleStore.swift */; };
@@ -88,6 +92,7 @@
 		0723E0240EB43E9838460A6A /* BridgeProtocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeProtocols.swift; sourceTree = "<group>"; };
 		08DFFED7FCBD45A799EF9421 /* WeatherServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherServiceTests.swift; sourceTree = "<group>"; };
 		0E699970A9A46ECDFF18F809 /* MacOSController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacOSController.swift; sourceTree = "<group>"; };
+		11E7374A41F6D4FD1445EEF1 /* FooterNoticeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FooterNoticeTests.swift; sourceTree = "<group>"; };
 		135600203C62245B423BBC18 /* SensorContinuity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SensorContinuity.swift; sourceTree = "<group>"; };
 		193B28701B6B700857275182 /* PrometheusListenTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrometheusListenTests.swift; sourceTree = "<group>"; };
 		1AA8C223A8A954DBEA3B99FB /* HomeKitSensorProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeKitSensorProviderTests.swift; sourceTree = "<group>"; };
@@ -95,6 +100,7 @@
 		20D353000D2FAFCC09FDBC3D /* MenuBarNotifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarNotifications.swift; sourceTree = "<group>"; };
 		28AB67D4A25EF6EE6927552E /* HomeSensorPlot.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = HomeSensorPlot.entitlements; sourceTree = "<group>"; };
 		304E8D892739B82D3452D45F /* NumberFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NumberFormatting.swift; sourceTree = "<group>"; };
+		391DEBC60D4C81DB4747DEA8 /* FooterNotice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FooterNotice.swift; sourceTree = "<group>"; };
 		39391BF90F5D4D3D63F0C58B /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		41012E5B1FF58DE7E653AFA8 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		43A4511565F566E5FFC7D48C /* SensorCharacteristicClassifierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SensorCharacteristicClassifierTests.swift; sourceTree = "<group>"; };
@@ -109,6 +115,7 @@
 		6CA8A3D9143090C179CCFF0D /* SensorCollectorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SensorCollectorTests.swift; sourceTree = "<group>"; };
 		71E4A12ED6696B5025DEF8D7 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		79954DB0380012FB12BE1C7C /* DistributionChannel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistributionChannel.swift; sourceTree = "<group>"; };
+		80D0E60C0AEBB4564D200C93 /* ChartInteraction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartInteraction.swift; sourceTree = "<group>"; };
 		81CF655F034614730F8AF77C /* SupportDumpTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupportDumpTests.swift; sourceTree = "<group>"; };
 		88E50A333C93088DC2C0BABE /* MacOSPluginLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacOSPluginLoader.swift; sourceTree = "<group>"; };
 		8AE551141290ECA250FBA851 /* SampleAcceptanceDebouncer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleAcceptanceDebouncer.swift; sourceTree = "<group>"; };
@@ -117,10 +124,9 @@
 		9F5BAF0C3A2D2FD9E6326567 /* SampleAcceptanceDebouncerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleAcceptanceDebouncerTests.swift; sourceTree = "<group>"; };
 		A1A505072F3ECE82B54CA099 /* SensorCategoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SensorCategoryTests.swift; sourceTree = "<group>"; };
 		A7116E34A12D69694A7685B4 /* SeriesDownsample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeriesDownsample.swift; sourceTree = "<group>"; };
-		A8E4C1B07D2F49A6B5C3D8E1 /* SeriesGaps.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeriesGaps.swift; sourceTree = "<group>"; };
-		D5C27E81A4B64F09C8E1D3A7 /* SeriesGapsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeriesGapsTests.swift; sourceTree = "<group>"; };
 		AA7A26FEFAF4613039122C24 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		AB236A5891BB77664A8C5B85 /* TemperatureUnit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemperatureUnit.swift; sourceTree = "<group>"; };
+		B4D30BD74E3B8C9E3FFA95C3 /* SeriesGapsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeriesGapsTests.swift; sourceTree = "<group>"; };
 		B4D9210325A3C2ECA48D2BC1 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		B7AC9EAB2B170F56C7BD19A2 /* InventoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InventoryView.swift; sourceTree = "<group>"; };
 		B872CC522BD6F4CD903072DD /* WeatherService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherService.swift; sourceTree = "<group>"; };
@@ -132,11 +138,13 @@
 		CAE2225EDBB741033E7B23DB /* SensorCharacteristicClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SensorCharacteristicClassifier.swift; sourceTree = "<group>"; };
 		CB0004CB8AF47E70807E29AA /* NumberFormattingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NumberFormattingTests.swift; sourceTree = "<group>"; };
 		D3BA413B2E50610504FC247E /* SensorContinuityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SensorContinuityTests.swift; sourceTree = "<group>"; };
+		DA93234F7587A024C0F48FDE /* ChartInteractionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartInteractionTests.swift; sourceTree = "<group>"; };
 		DE4E219084ABB11CB78B54F6 /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
 		E44D309DDC4EDD6B7EB4849A /* PrometheusExporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrometheusExporterTests.swift; sourceTree = "<group>"; };
 		E77DC5F7512391C483659523 /* TemperatureUnitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemperatureUnitTests.swift; sourceTree = "<group>"; };
 		F096165DFA235C1D5F68C4AE /* TimeBoxTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeBoxTests.swift; sourceTree = "<group>"; };
 		F3C636351D61BD61026E1531 /* ChartsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartsView.swift; sourceTree = "<group>"; };
+		F6B22F2E264D0181DD930E1E /* SeriesGaps.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeriesGaps.swift; sourceTree = "<group>"; };
 		F73812BF6D71AD04F4DCFC2F /* SeriesDownsampleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeriesDownsampleTests.swift; sourceTree = "<group>"; };
 		FB5BD8C310A7F8EC232C132C /* DistributionChannelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistributionChannelTests.swift; sourceTree = "<group>"; };
 		FE0464EE8A462254AC1B50C6 /* LoginItemManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginItemManager.swift; sourceTree = "<group>"; };
@@ -234,7 +242,9 @@
 			isa = PBXGroup;
 			children = (
 				71E4A12ED6696B5025DEF8D7 /* AppSettings.swift */,
+				80D0E60C0AEBB4564D200C93 /* ChartInteraction.swift */,
 				79954DB0380012FB12BE1C7C /* DistributionChannel.swift */,
+				391DEBC60D4C81DB4747DEA8 /* FooterNotice.swift */,
 				FE0464EE8A462254AC1B50C6 /* LoginItemManager.swift */,
 				465BB5F1F6FA295F2B7CBDC1 /* Models.swift */,
 				304E8D892739B82D3452D45F /* NumberFormatting.swift */,
@@ -242,7 +252,7 @@
 				039E2641B6CCCFB63B3E7456 /* SensorCategory.swift */,
 				135600203C62245B423BBC18 /* SensorContinuity.swift */,
 				A7116E34A12D69694A7685B4 /* SeriesDownsample.swift */,
-				A8E4C1B07D2F49A6B5C3D8E1 /* SeriesGaps.swift */,
+				F6B22F2E264D0181DD930E1E /* SeriesGaps.swift */,
 				64257D1A9687EB562FD401DD /* SupportDump.swift */,
 				AB236A5891BB77664A8C5B85 /* TemperatureUnit.swift */,
 				B872CC522BD6F4CD903072DD /* WeatherService.swift */,
@@ -293,7 +303,9 @@
 		E7D12963FBED19FD7199D4A4 /* HomeSensorPlotTests */ = {
 			isa = PBXGroup;
 			children = (
+				DA93234F7587A024C0F48FDE /* ChartInteractionTests.swift */,
 				FB5BD8C310A7F8EC232C132C /* DistributionChannelTests.swift */,
+				11E7374A41F6D4FD1445EEF1 /* FooterNoticeTests.swift */,
 				1AA8C223A8A954DBEA3B99FB /* HomeKitSensorProviderTests.swift */,
 				CB0004CB8AF47E70807E29AA /* NumberFormattingTests.swift */,
 				E44D309DDC4EDD6B7EB4849A /* PrometheusExporterTests.swift */,
@@ -305,7 +317,7 @@
 				6CA8A3D9143090C179CCFF0D /* SensorCollectorTests.swift */,
 				D3BA413B2E50610504FC247E /* SensorContinuityTests.swift */,
 				F73812BF6D71AD04F4DCFC2F /* SeriesDownsampleTests.swift */,
-				D5C27E81A4B64F09C8E1D3A7 /* SeriesGapsTests.swift */,
+				B4D30BD74E3B8C9E3FFA95C3 /* SeriesGapsTests.swift */,
 				81CF655F034614730F8AF77C /* SupportDumpTests.swift */,
 				E77DC5F7512391C483659523 /* TemperatureUnitTests.swift */,
 				F096165DFA235C1D5F68C4AE /* TimeBoxTests.swift */,
@@ -465,9 +477,11 @@
 				C79AD5A7F1EE036395ECAFB3 /* AppState.swift in Sources */,
 				5FFA9D9E122562D4DB12E85B /* BridgeProtocols.swift in Sources */,
 				9A279F312DF664765CA062F4 /* CatalystWindowConfigurator.swift in Sources */,
+				1665ADA59531776620DFFAC4 /* ChartInteraction.swift in Sources */,
 				B69BB2DC7D3E139886DBA932 /* ChartsView.swift in Sources */,
 				4FFFC5CFE63534BE94B48857 /* ContentView.swift in Sources */,
 				3C71CAFFE4A9C5FBA0320FBA /* DistributionChannel.swift in Sources */,
+				D62A6C1DBAC790FAE6BE7397 /* FooterNotice.swift in Sources */,
 				8C7A0523FD42CC3E300AA4F4 /* HomeKitSensorProvider.swift in Sources */,
 				63747186ACED1575C31C0A9E /* HomeSensorPlotApp.swift in Sources */,
 				02C54EBF3856EC4648B7A4F6 /* InventoryView.swift in Sources */,
@@ -486,7 +500,7 @@
 				6133AFF39E3BAFCFE42CB2FF /* SensorCollector.swift in Sources */,
 				ABAAA4E1F205A639282860EC /* SensorContinuity.swift in Sources */,
 				DC2153BDE961AF91EC76E7D8 /* SeriesDownsample.swift in Sources */,
-				3F91AB06C4E85D27A0B6C194 /* SeriesGaps.swift in Sources */,
+				E91E5007FD6F34049FE5D0C2 /* SeriesGaps.swift in Sources */,
 				85CD4B469BB17EF7E4D77B02 /* SettingsView.swift in Sources */,
 				A2C573F905B4E4C739A139BC /* SupportDump.swift in Sources */,
 				C092F0F563DF06B5F78D86D6 /* TemperatureUnit.swift in Sources */,
@@ -498,7 +512,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E8A025FD1AEFD9E1F9B45998 /* ChartInteractionTests.swift in Sources */,
 				3F289BB2F0D0270BE8B867A1 /* DistributionChannelTests.swift in Sources */,
+				D75B881B4F3B02EA9BEDA06F /* FooterNoticeTests.swift in Sources */,
 				DB0DB848FD4909227DD75993 /* HomeKitSensorProviderTests.swift in Sources */,
 				602F9187C6C24B311F0CD8CD /* NumberFormattingTests.swift in Sources */,
 				635C068C76CD1E6AD1C65E3F /* PrometheusExporterTests.swift in Sources */,
@@ -510,7 +526,7 @@
 				1FB0A66E6521A2BBD0BFF083 /* SensorCollectorTests.swift in Sources */,
 				D416FAA95404CDE8FA4213B2 /* SensorContinuityTests.swift in Sources */,
 				0D2B63DE473B3E7190292A54 /* SeriesDownsampleTests.swift in Sources */,
-				6B0E4A93F1C85D27B4A9E0C2 /* SeriesGapsTests.swift in Sources */,
+				998E3BC2D8ACA40D6C809F50 /* SeriesGapsTests.swift in Sources */,
 				9242BEBC480C8C22A4F5A0A4 /* SupportDumpTests.swift in Sources */,
 				812CBA823F1CA092B2789E64 /* TemperatureUnitTests.swift in Sources */,
 				3250A0CA09BD3A1CCD913BA2 /* TimeBoxTests.swift in Sources */,

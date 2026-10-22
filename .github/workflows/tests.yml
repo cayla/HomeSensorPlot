@@ -1,0 +1,21 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  catalyst:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Mac Catalyst tests
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -scheme HomeSensorPlot \
+            -destination 'platform=macOS,variant=Mac Catalyst' \
+            -quiet \
+            CODE_SIGNING_ALLOWED=NO \
+            test

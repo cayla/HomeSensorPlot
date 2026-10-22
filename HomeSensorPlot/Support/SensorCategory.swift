@@ -115,6 +115,16 @@ enum SensorCategory: String, CaseIterable, Identifiable, Hashable, Sendable {
         }
     }
 
+    /// Collected and exported, left off the chart grid on purpose.
+    /// Air-quality enum, battery-low, tamper, and the CO/CO2 detected flags.
+    static let inventoryOnlyMetricNames: Set<String> = [
+        "homekit_air_quality",
+        "homekit_battery_low",
+        "homekit_tampered",
+        "homekit_co2_detected",
+        "homekit_co_detected",
+    ]
+
     static func category(forMetric metricName: String) -> SensorCategory? {
         allCases.first { $0.metricNames.contains(metricName) }
     }

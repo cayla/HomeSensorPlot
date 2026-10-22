@@ -22,7 +22,16 @@ final class AppState: ObservableObject {
     @Published var timeBox: TimeBox = .twentyFourHours
     @Published var customStart: Date = Date().addingTimeInterval(-86_400)
     @Published var openAtLogin: Bool = LoginItemManager.isEnabled
-    @Published var lastRefreshError: String?
+    @Published var lastRefreshError: String? {
+        didSet {
+            guard !suppressFooterSync else { return }
+            if let lastRefreshError {
+                footerNotice = .other(lastRefreshError)
+            } else {
+                footerNotice = nil
+            }
+        }
+    }
     /// Non-fatal store path warning (temp DB fallback).
     @Published var storeBootstrapWarning: String?
     /// Menu / settings label: `off` or `127.0.0.1:port`.
@@ -33,6 +42,8 @@ final class AppState: ObservableObject {
     private var refreshTask: Task<Void, Never>?
     private var didStart = false
     private var cancellables = Set<AnyCancellable>()
+    private var footerNotice: FooterNotice?
+    private var suppressFooterSync = false
 
     init() {
         let settings = AppSettings()
@@ -114,9 +125,7 @@ final class AppState: ObservableObject {
         guard settings.exporterEnabled else {
             exporter.stop()
             exporterAddress = "off"
-            if lastRefreshError?.localizedCaseInsensitiveContains("Exporter") == true {
-                lastRefreshError = nil
-            }
+            clearExporterFailure()
             pushStatusToMacBridge()
             return
         }
@@ -128,7 +137,7 @@ final class AppState: ObservableObject {
         } catch {
             // Keep the toggle on so the user can retry; never advertise a fake scrape URL.
             exporterAddress = "off"
-            lastRefreshError = "Exporter failed: \(error.localizedDescription)"
+            setExporterFailure(error)
             pushStatusToMacBridge()
         }
     }
@@ -142,14 +151,27 @@ final class AppState: ObservableObject {
         switch result {
         case .success(let port):
             exporterAddress = "127.0.0.1:\(NumberFormatting.port(Int(port)))"
-            if lastRefreshError?.localizedCaseInsensitiveContains("Exporter") == true {
-                lastRefreshError = nil
-            }
+            clearExporterFailure()
         case .failure(let error):
             exporterAddress = "off"
-            lastRefreshError = "Exporter failed: \(error.localizedDescription)"
+            setExporterFailure(error)
         }
         pushStatusToMacBridge()
+    }
+
+    private func setExporterFailure(_ error: Error) {
+        applyFooter(.exporter("Exporter failed: \(error.localizedDescription)"))
+    }
+
+    private func clearExporterFailure() {
+        applyFooter(footerNotice?.withoutExporterFailure)
+    }
+
+    private func applyFooter(_ notice: FooterNotice?) {
+        footerNotice = notice
+        suppressFooterSync = true
+        lastRefreshError = notice?.message
+        suppressFooterSync = false
     }
 
     func setExporterEnabled(_ enabled: Bool) {
@@ -202,10 +224,6 @@ final class AppState: ObservableObject {
             if let category = selectedCategory {
                 syncEnabledSensors(for: category)
                 await reloadCategoryChart()
-            }
-            // Don't surface HomeKit per-characteristic "not supported" noise in the footer.
-            if lastRefreshError?.localizedCaseInsensitiveContains("not supported") == true {
-                lastRefreshError = nil
             }
         } catch {
             lastRefreshError = error.localizedDescription

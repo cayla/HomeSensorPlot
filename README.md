@@ -49,6 +49,8 @@ xcodegen generate
 xcodebuild -scheme HomeSensorPlot -destination 'platform=macOS,variant=Mac Catalyst' test
 ```
 
+GitHub Actions runs the HomeSensorPlot scheme tests on pull requests.
+
 ## Prometheus scrape
 
 Enable **Settings → Enable localhost exporter** (off by default). The listener binds **loopback only**; if that bind fails, the exporter stays off (no LAN fallback).
