@@ -80,7 +80,8 @@ private struct CategoryDetailView: View {
     @State private var selectedTime: Date?
     @State private var hoverRows: [HoverRow] = []
     @State private var tipPosition: CGPoint?
-    @State private var indexedSeries: [String: [ChartSeriesPoint]] = [:]
+    /// Sidebar hover. Wins over the chart's nearest-line dimming while the pointer is in the list.
+    @State private var sidebarHighlightID: String?
 
     private struct HoverRow: Identifiable {
         var id: String
@@ -176,19 +177,13 @@ private struct CategoryDetailView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .onChange(of: appState.categoryChartPoints) { _, _ in
-            rebuildIndex()
-        }
         .onChange(of: appState.categoryEnabledSensorIDs) { _, _ in
-            rebuildIndex()
             clearHover()
+            sidebarHighlightID = nil
         }
         .onChange(of: appState.outdoorChartEnabled) { _, _ in
-            rebuildIndex()
             clearHover()
-        }
-        .onAppear {
-            rebuildIndex()
+            sidebarHighlightID = nil
         }
     }
 
@@ -243,21 +238,23 @@ private struct CategoryDetailView: View {
                                 Task { await appState.reloadCategoryChart() }
                             }
                         )) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Outdoor (weather)")
-                                    .font(.caption.weight(.semibold))
-                                Text(outdoorSubtitle)
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                                if let outdoorLatestText {
-                                    Text(outdoorLatestText)
-                                        .font(.caption2.monospacedDigit())
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
+                            sensorRow(
+                                title: "Outdoor (weather)",
+                                subtitle: outdoorSubtitle,
+                                unit: nil,
+                                value: outdoorLatestText,
+                                color: activeColorBySensorID[AppState.outdoorWeatherSeriesID]
+                            )
                         }
                         .toggleStyle(.switch)
                         .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 28))
+                        .listRowBackground(rowBackground(for: AppState.outdoorWeatherSeriesID))
+                        .onContinuousHover { phase in
+                            setSidebarHighlight(
+                                AppState.outdoorWeatherSeriesID,
+                                inside: hoverIsActive(phase)
+                            )
+                        }
                     }
 
                     ForEach(categorySensors) { sensor in
@@ -265,28 +262,20 @@ private struct CategoryDetailView: View {
                             get: { appState.categoryEnabledSensorIDs.contains(sensor.id) },
                             set: { appState.setCategorySensor(sensor.id, enabled: $0) }
                         )) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(sensor.accessoryName)
-                                    .font(.caption.weight(.semibold))
-                                    .lineLimit(2)
-                                Text(sensor.roomName.isEmpty ? sensor.homeName : sensor.roomName)
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                                    .lineLimit(1)
-                                if category != .temperature, !category.isStateCategory {
-                                    Text(sensor.unit)
-                                        .font(.caption2.monospaced())
-                                        .foregroundStyle(.secondary)
-                                }
-                                if let last = sensor.lastValue {
-                                    Text(formatSidebarValue(last, unit: sensor.unit))
-                                        .font(.caption2.monospacedDigit())
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
+                            sensorRow(
+                                title: sensor.accessoryName,
+                                subtitle: sensor.roomName.isEmpty ? sensor.homeName : sensor.roomName,
+                                unit: category != .temperature && !category.isStateCategory ? sensor.unit : nil,
+                                value: sensor.lastValue.map { formatSidebarValue($0, unit: sensor.unit) },
+                                color: activeColorBySensorID[sensor.id]
+                            )
                         }
                         .toggleStyle(.switch)
                         .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 28))
+                        .listRowBackground(rowBackground(for: sensor.id))
+                        .onContinuousHover { phase in
+                            setSidebarHighlight(sensor.id, inside: hoverIsActive(phase))
+                        }
                     }
                 }
                 .listStyle(.plain)
@@ -309,27 +298,33 @@ private struct CategoryDetailView: View {
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
+                let index = seriesIndex
                 ZStack(alignment: .topLeading) {
-                    Chart(enabledPoints) { point in
-                        LineMark(
-                            x: .value("Time", point.timestamp),
-                            y: .value("Value", point.value)
-                        )
-                        .interpolationMethod(.linear)
-                        .foregroundStyle(by: .value("Sensor", point.label))
-                        .lineStyle(StrokeStyle(
-                            lineWidth: point.sensorID == AppState.outdoorWeatherSeriesID ? 2.5 : 1.5,
-                            dash: point.sensorID == AppState.outdoorWeatherSeriesID ? [6, 4] : []
-                        ))
-                        .opacity(lineOpacity(for: point.sensorID))
-
+                    Chart {
+                        ForEach(drawingOrder(index.plotted)) { item in
+                            LineMark(
+                                x: .value("Time", item.point.timestamp),
+                                y: .value("Value", item.point.value),
+                                series: .value("Segment", item.segmentID)
+                            )
+                            .interpolationMethod(.linear)
+                            .foregroundStyle(by: .value("Sensor", item.point.label))
+                            .lineStyle(StrokeStyle(
+                                lineWidth: lineWidth(for: item.point.sensorID),
+                                dash: item.point.sensorID == AppState.outdoorWeatherSeriesID ? [6, 4] : []
+                            ))
+                            .opacity(lineOpacity(for: item.point.sensorID))
+                        }
                         if let selectedTime {
                             RuleMark(x: .value("Selected", selectedTime))
                                 .foregroundStyle(.secondary.opacity(0.45))
                                 .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
                         }
                     }
-                    .chartForegroundStyleScale(domain: seriesLabels, range: chartColors)
+                    .chartForegroundStyleScale(
+                        domain: seriesLabels,
+                        range: seriesLabels.map { stableColor(for: $0) }
+                    )
                     .chartYScale(domain: yAxisDomain)
                     .chartLegend(.hidden)
                     .chartXAxis {
@@ -349,7 +344,8 @@ private struct CategoryDetailView: View {
                                         updatePrometheusHover(
                                             at: location,
                                             proxy: proxy,
-                                            geometry: geo
+                                            geometry: geo,
+                                            buckets: index.buckets
                                         )
                                     case .ended:
                                         clearHover()
@@ -403,8 +399,19 @@ private struct CategoryDetailView: View {
     }
 
     private func lineOpacity(for sensorID: String) -> Double {
+        if let sidebarHighlightID {
+            return sensorID == sidebarHighlightID ? 1 : 0.18
+        }
         guard !hoverRows.isEmpty else { return 1 }
         return hoverRows.contains(where: { $0.id == sensorID }) ? 1 : 0.18
+    }
+
+    private func lineWidth(for sensorID: String) -> CGFloat {
+        let base: CGFloat = sensorID == AppState.outdoorWeatherSeriesID ? 2.5 : 1.5
+        if sidebarHighlightID == sensorID {
+            return base + 1
+        }
+        return base
     }
 
     private func clearHover() {
@@ -413,7 +420,12 @@ private struct CategoryDetailView: View {
         tipPosition = nil
     }
 
-    private func updatePrometheusHover(at location: CGPoint, proxy: ChartProxy, geometry: GeometryProxy) {
+    private func updatePrometheusHover(
+        at location: CGPoint,
+        proxy: ChartProxy,
+        geometry: GeometryProxy,
+        buckets: [String: SeriesBucket]
+    ) {
         guard let plotFrame = proxy.plotFrame else { return }
         let frame = geometry[plotFrame]
         let x = location.x - frame.origin.x
@@ -434,9 +446,9 @@ private struct CategoryDetailView: View {
         }
 
         var candidates: [Candidate] = []
-        for (sensorID, series) in indexedSeries {
-            guard let closest = nearest(in: series, to: time) else { continue }
-            guard abs(closest.timestamp.timeIntervalSince(time)) <= 45 * 60 else { continue }
+        for (sensorID, series) in buckets {
+            guard let closest = nearest(in: series.points, to: time) else { continue }
+            guard abs(closest.timestamp.timeIntervalSince(time)) <= series.matchWindow else { continue }
             candidates.append(
                 Candidate(id: sensorID, point: closest, distance: abs(closest.value - yValue))
             )
@@ -537,15 +549,149 @@ private struct CategoryDetailView: View {
         return (minV - pad)...(maxV + pad)
     }
 
-    private func color(for label: String) -> Color {
-        guard let index = seriesLabels.firstIndex(of: label) else { return .secondary }
-        return chartColors[index % chartColors.count]
+    /// Enabled series with samples in range. Missing means the row stays gray.
+    private var activeColorBySensorID: [String: Color] {
+        var colors: [String: Color] = [:]
+        for point in enabledPoints where colors[point.sensorID] == nil {
+            colors[point.sensorID] = stableColor(for: point.label)
+        }
+        return colors
     }
 
-    private func rebuildIndex() {
-        let grouped = Dictionary(grouping: enabledPoints, by: \.sensorID)
-        indexedSeries = grouped.mapValues { points in
-            points.sorted { $0.timestamp < $1.timestamp }
+    private func color(for label: String) -> Color {
+        guard seriesLabels.contains(label) else { return .secondary }
+        return stableColor(for: label)
+    }
+
+    /// Pinned to the series label so toggling another sensor does not reshuffle colors.
+    private func stableColor(for label: String) -> Color {
+        var hash: UInt32 = 2166136261
+        for byte in label.utf8 {
+            hash = (hash ^ UInt32(byte)) &* 16777619
+        }
+        return chartColors[Int(hash % UInt32(chartColors.count))]
+    }
+
+    private struct SeriesBucket {
+        var points: [ChartSeriesPoint]
+        var matchWindow: TimeInterval
+    }
+
+    private struct PlottedPoint: Identifiable {
+        var point: ChartSeriesPoint
+        var segmentID: String
+        var id: String { point.id }
+    }
+
+    private struct SeriesIndex {
+        var plotted: [PlottedPoint]
+        var buckets: [String: SeriesBucket]
+    }
+
+    /// Time-sorted points, split where `SeriesGaps` says the line should stop.
+    private var seriesIndex: SeriesIndex {
+        var grouped: [String: [ChartSeriesPoint]] = [:]
+        var order: [String] = []
+        for point in enabledPoints {
+            if grouped[point.sensorID] == nil {
+                order.append(point.sensorID)
+            }
+            grouped[point.sensorID, default: []].append(point)
+        }
+
+        var plotted: [PlottedPoint] = []
+        plotted.reserveCapacity(enabledPoints.count)
+        var buckets: [String: SeriesBucket] = [:]
+        buckets.reserveCapacity(order.count)
+        for sensorID in order {
+            let sorted = grouped[sensorID, default: []].sorted { $0.timestamp < $1.timestamp }
+            let layout = SeriesGaps.layout(timestamps: sorted.map(\.timestamp))
+            buckets[sensorID] = SeriesBucket(points: sorted, matchWindow: layout.matchWindow)
+            for (offset, point) in sorted.enumerated() {
+                plotted.append(
+                    PlottedPoint(
+                        point: point,
+                        segmentID: "\(sensorID)#\(layout.segments[offset])"
+                    )
+                )
+            }
+        }
+        return SeriesIndex(plotted: plotted, buckets: buckets)
+    }
+
+    /// Highlighted series last, so it paints over the lines it sits on.
+    private func drawingOrder(_ points: [PlottedPoint]) -> [PlottedPoint] {
+        guard let sidebarHighlightID else { return points }
+        var rest: [PlottedPoint] = []
+        var hot: [PlottedPoint] = []
+        rest.reserveCapacity(points.count)
+        for point in points {
+            if point.point.sensorID == sidebarHighlightID {
+                hot.append(point)
+            } else {
+                rest.append(point)
+            }
+        }
+        rest.append(contentsOf: hot)
+        return rest
+    }
+
+    private func sensorRow(
+        title: String,
+        subtitle: String,
+        unit: String?,
+        value: String?,
+        color: Color?
+    ) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            SeriesSwatch(color: color ?? Color.secondary.opacity(0.45))
+                .padding(.top, 3)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.caption.weight(.semibold))
+                    .lineLimit(2)
+                    .foregroundStyle(color == nil ? .secondary : .primary)
+                Text(subtitle)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                if let unit {
+                    Text(unit)
+                        .font(.caption2.monospaced())
+                        .foregroundStyle(.secondary)
+                }
+                if let value {
+                    Text(value)
+                        .font(.caption2.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+    }
+
+    private func rowBackground(for sensorID: String) -> Color {
+        sidebarHighlightID == sensorID ? Color.primary.opacity(0.08) : Color.clear
+    }
+
+    private func hoverIsActive(_ phase: HoverPhase) -> Bool {
+        if case .active = phase { return true }
+        return false
+    }
+
+    private func setSidebarHighlight(_ sensorID: String, inside: Bool) {
+        guard activeColorBySensorID[sensorID] != nil else {
+            if sidebarHighlightID == sensorID {
+                sidebarHighlightID = nil
+            }
+            return
+        }
+        if inside {
+            if sidebarHighlightID != sensorID {
+                clearHover()
+            }
+            sidebarHighlightID = sensorID
+        } else if sidebarHighlightID == sensorID {
+            sidebarHighlightID = nil
         }
     }
 
@@ -630,5 +776,17 @@ private struct CategoryDetailView: View {
             }
             return "\(NumberFormatting.measurement(value)) \(unit)"
         }
+    }
+}
+
+/// Color dab for a sidebar row. The name stays in the label color.
+private struct SeriesSwatch: View {
+    var color: Color
+
+    var body: some View {
+        Circle()
+            .fill(color)
+            .frame(width: 8, height: 8)
+            .accessibilityHidden(true)
     }
 }
