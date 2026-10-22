@@ -84,6 +84,69 @@ final class SampleStoreTests: XCTestCase {
         XCTAssertTrue(try store.latestSamples().isEmpty)
     }
 
+    func testRebindMovesSamplesAndKeepsFlags() throws {
+        let existing = makeSensor(id: "old-home:acc:svc:chr", metric: "homekit_temperature_celsius", hidden: true, blocked: true)
+        try store.upsertSensor(existing)
+        let ts = Date(timeIntervalSince1970: 1_700_000_000)
+        try store.insertSample(sensorID: existing.id, timestamp: ts, value: 19)
+
+        var discovered = existing
+        discovered.id = "new-home:acc:svc:chr"
+        discovered.isHidden = false
+        discovered.isBlocked = false
+        try store.rebind([SensorContinuityPair(existing: existing, discovered: discovered)])
+
+        let sensors = try store.allSensors()
+        XCTAssertEqual(sensors.map(\.id), [discovered.id])
+        XCTAssertTrue(sensors[0].isHidden)
+        XCTAssertTrue(sensors[0].isBlocked)
+        let points = try store.samples(sensorID: discovered.id, from: ts.addingTimeInterval(-1))
+        XCTAssertEqual(points.count, 1)
+        XCTAssertEqual(points[0].value, 19, accuracy: 0.0001)
+        XCTAssertTrue(try store.samples(sensorID: existing.id, from: ts.addingTimeInterval(-1)).isEmpty)
+    }
+
+    func testDeleteAllCollectedDataKeepsTheFile() throws {
+        try store.upsertSensor(makeSensor(id: "s1", metric: "homekit_temperature_celsius"))
+        try store.insertSample(sensorID: "s1", timestamp: Date(), value: 1)
+        try store.deleteAllCollectedData()
+        XCTAssertTrue(try store.allSensors().isEmpty)
+        XCTAssertEqual(try store.sampleCount(), 0)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: store.databaseURL.path))
+    }
+
+    func testLegacyDatabaseIsCopiedOncePerChannel() throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("HomeSensorPlotLegacy-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+
+        var seeded: SampleStore? = try SampleStore(directory: dir, channel: .development)
+        try seeded?.upsertSensor(makeSensor(id: "kept", metric: "homekit_temperature_celsius"))
+        try seeded?.insertSample(sensorID: "kept", timestamp: Date(), value: 3)
+        let seededURL = try XCTUnwrap(seeded?.databaseURL)
+        seeded = nil
+
+        let legacy = dir.appendingPathComponent(SampleStore.legacyDatabaseFileName)
+        try FileManager.default.moveItem(at: seededURL, to: legacy)
+        for suffix in ["-wal", "-shm"] {
+            let sidecar = URL(fileURLWithPath: seededURL.path + suffix)
+            guard FileManager.default.fileExists(atPath: sidecar.path) else { continue }
+            try FileManager.default.moveItem(at: sidecar, to: URL(fileURLWithPath: legacy.path + suffix))
+        }
+
+        let testflight = try SampleStore(directory: dir, channel: .testflight)
+        XCTAssertEqual(try testflight.allSensors().map(\.id), ["kept"])
+        XCTAssertTrue(FileManager.default.fileExists(atPath: legacy.path))
+
+        let appStore = try SampleStore(directory: dir, channel: .appStore)
+        XCTAssertEqual(try appStore.allSensors().map(\.id), ["kept"])
+
+        try FileManager.default.removeItem(at: testflight.databaseURL)
+        let reopened = try SampleStore(directory: dir, channel: .testflight)
+        XCTAssertTrue(try reopened.allSensors().isEmpty)
+        XCTAssertEqual(SampleStore.legacyCopiedChannels(in: dir), ["app-store", "testflight"])
+    }
+
     func testDeleteMockAndAutoMetrics() throws {
         try store.upsertSensor(makeSensor(id: "mock:temp", metric: "homekit_temperature_celsius"))
         try store.upsertSensor(makeSensor(id: "live", metric: "homekit_temperature_celsius"))

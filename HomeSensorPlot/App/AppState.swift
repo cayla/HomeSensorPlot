@@ -193,6 +193,10 @@ final class AppState: ObservableObject {
 
     func refreshUI() async {
         do {
+            let rebindMap = collector.consumeRebindMap()
+            if !rebindMap.isEmpty {
+                categoryEnabledSensorIDs = Set(categoryEnabledSensorIDs.map { rebindMap[$0] ?? $0 })
+            }
             let all = try store.sensors(mockOnly: settings.useMockData)
             sensors = all
             if let category = selectedCategory {
@@ -384,6 +388,61 @@ final class AppState: ObservableObject {
     func useLiveHomeKit() {
         settings.useMockData = false
         Task { await collectNow() }
+    }
+
+    func resetCollectedData() {
+        do {
+            try store.deleteAllCollectedData()
+            sensors = []
+            categoryChartPoints = []
+            categoryEnabledSensorIDs = []
+            lastRefreshError = nil
+            Task {
+                await refreshUI()
+                await collectNow()
+            }
+        } catch {
+            lastRefreshError = error.localizedDescription
+        }
+    }
+
+    func makeSupportDump() -> String {
+        let records = (try? store.allSensors()) ?? sensors
+        let input = SupportDumpInput(
+            generatedAt: Date(),
+            bundleID: Bundle.main.bundleIdentifier ?? "unknown",
+            appVersion: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "",
+            buildNumber: Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "",
+            osVersion: ProcessInfo.processInfo.operatingSystemVersionString,
+            channel: store.channel.rawValue,
+            databaseFileName: store.databaseURL.lastPathComponent,
+            legacyCopiedTo: SampleStore.legacyCopiedChannels(in: store.databaseURL.deletingLastPathComponent()),
+            homeKitAuthorization: homeKit.authorizationLabel,
+            homeCount: homeKit.homeCount,
+            accessoryCount: homeKit.accessoryCount,
+            candidateCount: homeKit.lastCandidateCount,
+            collectorStatus: status.shortLabel,
+            continuity: collector.continuitySummary,
+            sensorCount: records.count,
+            sampleCount: (try? store.sampleCount()) ?? -1,
+            sensors: records.map { sensor in
+                SupportDumpSensor(
+                    id: sensor.id,
+                    homeName: sensor.homeName,
+                    roomName: sensor.roomName,
+                    accessoryName: sensor.accessoryName,
+                    serviceName: sensor.serviceName,
+                    characteristicType: sensor.characteristicType,
+                    metricName: sensor.metricName,
+                    unit: sensor.unit,
+                    isHidden: sensor.isHidden,
+                    isBlocked: sensor.isBlocked,
+                    lastValue: sensor.lastValue,
+                    lastUpdated: sensor.lastUpdated
+                )
+            }
+        )
+        return SupportDump.json(input)
     }
 
     /// When “All” is active, pick up newly discovered sensors; after None/manual, only drop stale IDs.
