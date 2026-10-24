@@ -87,6 +87,8 @@ private struct CategoryDetailView: View {
         var id: String
         var label: String
         var valueText: String
+        /// Visible-range low, high, and average. Nil for states and flat series.
+        var statsText: String?
         var color: Color
     }
 
@@ -398,15 +400,23 @@ private struct CategoryDetailView: View {
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(.secondary)
             ForEach(rows) { row in
-                HStack(spacing: 6) {
-                    Circle()
-                        .fill(row.color)
-                        .frame(width: 8, height: 8)
-                    Text(row.label)
-                        .lineLimit(2)
-                    Spacer(minLength: 8)
-                    Text(row.valueText)
-                        .font(.caption.monospacedDigit().weight(.semibold))
+                VStack(alignment: .leading, spacing: 1) {
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(row.color)
+                            .frame(width: 8, height: 8)
+                        Text(row.label)
+                            .lineLimit(2)
+                        Spacer(minLength: 8)
+                        Text(row.valueText)
+                            .font(.caption.monospacedDigit().weight(.semibold))
+                    }
+                    if let statsText = row.statsText {
+                        Text(statsText)
+                            .font(.caption2.monospacedDigit())
+                            .foregroundStyle(.secondary)
+                            .padding(.leading, 14)
+                    }
                 }
                 .font(.caption2)
             }
@@ -484,13 +494,17 @@ private struct CategoryDetailView: View {
                 id: pick.id,
                 label: point.label,
                 valueText: ChartInteraction.hoverText(category: category, value: point.value),
+                statsText: buckets[pick.id]?.statsText,
                 color: color(for: point.label)
             )
         }
 
         // Keep tip inside the plot, offset from the cursor like Prometheus.
         let tipWidth: CGFloat = 280
-        let tipHeight: CGFloat = 28 + CGFloat(hoverRows.count) * 20
+        let statsRowCount = hoverRows.reduce(0) { count, row in
+            count + (row.statsText == nil ? 0 : 1)
+        }
+        let tipHeight: CGFloat = 28 + CGFloat(hoverRows.count) * 20 + CGFloat(statsRowCount) * 16
         var tipX = location.x + tipWidth / 2 + 16
         var tipY = location.y
         if tipX + tipWidth / 2 > geometry.size.width {
@@ -579,6 +593,7 @@ private struct CategoryDetailView: View {
     private struct SeriesBucket {
         var points: [ChartSeriesPoint]
         var matchWindow: TimeInterval
+        var statsText: String?
     }
 
     private struct PlottedPoint: Identifiable {
@@ -617,7 +632,17 @@ private struct CategoryDetailView: View {
         for sensorID in order {
             let sorted = grouped[sensorID, default: []].sorted { $0.timestamp < $1.timestamp }
             let layout = SeriesGaps.layout(timestamps: sorted.map(\.timestamp))
-            buckets[sensorID] = SeriesBucket(points: sorted, matchWindow: layout.matchWindow)
+            let statsText = ChartInteraction.statsText(
+                category: category,
+                samples: sorted.map {
+                    ChartInteraction.Sample(timestamp: $0.timestamp, value: $0.value)
+                }
+            )
+            buckets[sensorID] = SeriesBucket(
+                points: sorted,
+                matchWindow: layout.matchWindow,
+                statsText: statsText
+            )
             let markLonelySample = visibleCount[sensorID] == 1
             for (offset, point) in sorted.enumerated() {
                 plotted.append(

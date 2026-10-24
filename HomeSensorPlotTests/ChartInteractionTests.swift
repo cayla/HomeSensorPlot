@@ -107,6 +107,56 @@ final class ChartInteractionTests: XCTestCase {
         )
     }
 
+    func testWindowStatsFollowTheDrawnLine() throws {
+        let uneven = [
+            reading(minutes: 0, value: 0),
+            reading(minutes: 10, value: 30),
+            reading(minutes: 40, value: 30),
+        ]
+        let stats = try XCTUnwrap(ChartInteraction.windowStats(samples: uneven))
+        XCTAssertEqual(stats.minimum, 0)
+        XCTAssertEqual(stats.maximum, 30)
+        // The long interval at 30 outweighs a plain mean of the three readings (20).
+        XCTAssertEqual(stats.average, 26.25, accuracy: 0.0001)
+        XCTAssertEqual(
+            ChartInteraction.statsText(category: .temperature, samples: uneven),
+            formattedStats(low: 0, high: 30, average: 26.25)
+        )
+    }
+
+    func testWindowStatsSkipGapsTheLineDoesNotCross() throws {
+        let samples = [
+            reading(minutes: 0, value: 0),
+            reading(minutes: 10, value: 0),
+            reading(minutes: 20, value: 10),
+            reading(minutes: 1000, value: 100),
+        ]
+        let stats = try XCTUnwrap(ChartInteraction.windowStats(samples: samples))
+        XCTAssertEqual(stats.minimum, 0)
+        XCTAssertEqual(stats.maximum, 100)
+        XCTAssertEqual(stats.average, 2.5, accuracy: 0.0001)
+    }
+
+    func testWindowStatsNeedTwoSamples() {
+        let lone = [reading(minutes: 0, value: 21)]
+        XCTAssertNil(ChartInteraction.windowStats(samples: lone))
+        XCTAssertNil(ChartInteraction.statsText(category: .humidity, samples: lone))
+        XCTAssertNil(ChartInteraction.statsText(category: .temperature, samples: []))
+    }
+
+    func testStatsTextHidesAFlatRangeAndStateCategories() {
+        let flat = [reading(minutes: 0, value: 5), reading(minutes: 10, value: 5)]
+        XCTAssertEqual(ChartInteraction.windowStats(samples: flat)?.average, 5)
+        XCTAssertNil(ChartInteraction.statsText(category: .battery, samples: flat))
+
+        let roundedFlat = [reading(minutes: 0, value: 1.001), reading(minutes: 30, value: 1.004)]
+        XCTAssertNil(ChartInteraction.statsText(category: .light, samples: roundedFlat))
+
+        let states = [reading(minutes: 0, value: 0), reading(minutes: 15, value: 1)]
+        XCTAssertNil(ChartInteraction.statsText(category: .contact, samples: states))
+        XCTAssertNil(ChartInteraction.statsText(category: .motion, samples: states))
+    }
+
     func testStateWordingIsShared() {
         XCTAssertEqual(ChartInteraction.hoverText(category: .contact, value: 1), "open")
         XCTAssertEqual(
@@ -217,6 +267,13 @@ final class ChartInteractionTests: XCTestCase {
             0.416,
             accuracy: 0.01
         )
+    }
+
+    private func formattedStats(low: Double, high: Double, average: Double) -> String {
+        let lowText = NumberFormatting.measurement(low)
+        let highText = NumberFormatting.measurement(high)
+        let averageText = NumberFormatting.measurement(average)
+        return "\(lowText)–\(highText) · avg \(averageText)"
     }
 
     private func date(minutes: Double) -> Date {

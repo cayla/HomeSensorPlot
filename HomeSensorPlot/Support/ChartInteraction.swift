@@ -46,6 +46,13 @@ enum ChartInteraction {
         var index: Int
     }
 
+    /// Low, high, and time-weighted average of a time-sorted series.
+    struct WindowStats: Equatable {
+        var minimum: Double
+        var maximum: Double
+        var average: Double
+    }
+
     static func paddedDomain(_ values: [Double]) -> ClosedRange<Double> {
         guard let minV = values.min(), let maxV = values.max() else {
             return 0...1
@@ -114,6 +121,53 @@ enum ChartInteraction {
     static func yThreshold(_ y: Double, stateCategory: Bool) -> Double {
         if stateCategory { return 0.35 }
         return max(abs(y) * 0.04, 0.75)
+    }
+
+    /// Stats for the plotted series. Nil when fewer than two samples exist.
+    ///
+    /// The average follows the drawn line: trapezoids between samples, and no
+    /// contribution across a gap where the line breaks. A burst of readings
+    /// only counts for the time it spans. `samples` must be sorted by time.
+    static func windowStats(samples: [Sample]) -> WindowStats? {
+        guard samples.count >= 2 else { return nil }
+
+        var minimum = samples[0].value
+        var maximum = samples[0].value
+        for sample in samples.dropFirst() {
+            minimum = min(minimum, sample.value)
+            maximum = max(maximum, sample.value)
+        }
+
+        let segments = SeriesGaps.layout(timestamps: samples.map(\.timestamp)).segments
+        var weighted = 0.0
+        var duration = 0.0
+        for index in 1..<samples.count {
+            guard segments[index] == segments[index - 1] else { continue }
+            let dt = samples[index].timestamp.timeIntervalSince(samples[index - 1].timestamp)
+            guard dt > 0 else { continue }
+            weighted += (samples[index - 1].value + samples[index].value) / 2 * dt
+            duration += dt
+        }
+
+        let average: Double
+        if duration > 0 {
+            average = weighted / duration
+        } else {
+            average = samples.reduce(0) { $0 + $1.value } / Double(samples.count)
+        }
+        return WindowStats(minimum: minimum, maximum: maximum, average: average)
+    }
+
+    /// `18.2–23.4 · avg 20.1` for the visible series. Nil for state categories,
+    /// a single sample, or a range that rounds to one number.
+    static func statsText(category: SensorCategory, samples: [Sample]) -> String? {
+        guard ChartAxisKind.of(category) != .state else { return nil }
+        guard let stats = windowStats(samples: samples) else { return nil }
+        let low = NumberFormatting.measurement(stats.minimum)
+        let high = NumberFormatting.measurement(stats.maximum)
+        guard low != high else { return nil }
+        let average = NumberFormatting.measurement(stats.average)
+        return "\(low)–\(high) · avg \(average)"
     }
 
     static func hoverText(category: SensorCategory, value: Double) -> String {
