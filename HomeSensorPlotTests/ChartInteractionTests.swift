@@ -460,6 +460,57 @@ final class ChartInteractionTests: XCTestCase {
         )
     }
 
+    func testIndoorPublishKeepsOutdoorInsideTheWindow() {
+        let outdoorID = "outdoor"
+        let published = CategoryChartPublish.keepingOutdoor(
+            indoorPoints: [
+                ChartSeriesPoint(sensorID: "room", label: "Kitchen", timestamp: date(minutes: 10), value: 20),
+            ],
+            indoorSamples: [
+                "room": [ChartInteraction.Sample(timestamp: date(minutes: 10), value: 20)],
+            ],
+            previousPoints: [
+                ChartSeriesPoint(sensorID: outdoorID, label: "Outdoor", timestamp: date(minutes: 40), value: 5),
+                ChartSeriesPoint(sensorID: outdoorID, label: "Outdoor", timestamp: date(minutes: 400), value: 9),
+            ],
+            previousSamples: [
+                outdoorID: [
+                    ChartInteraction.Sample(timestamp: date(minutes: 40), value: 5),
+                    ChartInteraction.Sample(timestamp: date(minutes: 400), value: 9),
+                ],
+            ],
+            outdoorID: outdoorID,
+            windowStart: date(minutes: 0),
+            windowEnd: date(minutes: 100),
+            keepOutdoor: true
+        )
+        XCTAssertEqual(published.points.map(\.sensorID), ["room", outdoorID])
+        XCTAssertEqual(published.points.map(\.value), [20, 5])
+        XCTAssertEqual(published.samples[outdoorID]?.map(\.value), [5])
+        XCTAssertEqual(published.samples["room"]?.map(\.value), [20])
+    }
+
+    func testIndoorPublishDropsOutdoorWhenItIsNotShown() {
+        let published = CategoryChartPublish.keepingOutdoor(
+            indoorPoints: [
+                ChartSeriesPoint(sensorID: "room", label: "Kitchen", timestamp: date(minutes: 10), value: 20),
+            ],
+            indoorSamples: [:],
+            previousPoints: [
+                ChartSeriesPoint(sensorID: "outdoor", label: "Outdoor", timestamp: date(minutes: 10), value: 5),
+            ],
+            previousSamples: [
+                "outdoor": [ChartInteraction.Sample(timestamp: date(minutes: 10), value: 5)],
+            ],
+            outdoorID: "outdoor",
+            windowStart: date(minutes: 0),
+            windowEnd: date(minutes: 100),
+            keepOutdoor: false
+        )
+        XCTAssertEqual(published.points.map(\.sensorID), ["room"])
+        XCTAssertNil(published.samples["outdoor"])
+    }
+
     private func formattedStats(
         low: Double,
         high: Double,

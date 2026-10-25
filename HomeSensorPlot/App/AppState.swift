@@ -327,13 +327,24 @@ final class AppState: ObservableObject {
             }
 
             // Publish HomeKit series immediately — never block the chart on weather/location.
-            let indoorOnly = points.filter { $0.sensorID != Self.outdoorWeatherSeriesID }
-            categoryChartPoints = indoorOnly
-            categoryWindowSamples = windowSamples
+            // Keep the outdoor series already on screen until the overlay replaces it.
+            let keepOutdoor = category == .temperature && settings.showOutdoorWeather
+            let published = CategoryChartPublish.keepingOutdoor(
+                indoorPoints: points,
+                indoorSamples: windowSamples,
+                previousPoints: categoryChartPoints,
+                previousSamples: categoryWindowSamples,
+                outdoorID: Self.outdoorWeatherSeriesID,
+                windowStart: window.start,
+                windowEnd: window.end,
+                keepOutdoor: keepOutdoor
+            )
+            categoryChartPoints = published.points
+            categoryWindowSamples = published.samples
 
             // Load outdoor even when the line is hidden. The chart filters it;
             // the sidebar still shows the current reading and the window.
-            if category == .temperature, settings.showOutdoorWeather {
+            if keepOutdoor {
                 weather.configure(allowIPGeolocationFallback: settings.allowIPGeolocationFallback)
                 await loadOutdoorWeatherOverlay(
                     window: window,

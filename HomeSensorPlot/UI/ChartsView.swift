@@ -80,6 +80,8 @@ private struct CategoryDetailView: View {
     @State private var selectedTime: Date?
     @State private var hoverRows: [HoverRow] = []
     @State private var tipPosition: CGPoint?
+    /// Pointer is inside the plot. A hole hides the rule without bringing the hint back.
+    @State private var pointerIsOverPlot = false
     /// Sidebar hover. Wins over the chart's nearest-line dimming while the pointer is in the list.
     @State private var sidebarHighlightID: String?
 
@@ -392,6 +394,7 @@ private struct CategoryDetailView: View {
                                             buckets: index.buckets
                                         )
                                     case .ended:
+                                        pointerIsOverPlot = false
                                         clearHover()
                                     }
                                 }
@@ -399,7 +402,7 @@ private struct CategoryDetailView: View {
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                    if selectedTime == nil {
+                    if selectedTime == nil, !pointerIsOverPlot {
                         Text("Hover mouse over lines to inspect")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
@@ -459,6 +462,10 @@ private struct CategoryDetailView: View {
     }
 
     private func clearHover() {
+        dismissHoverReadout()
+    }
+
+    private func dismissHoverReadout() {
         selectedTime = nil
         hoverRows = []
         tipPosition = nil
@@ -475,13 +482,15 @@ private struct CategoryDetailView: View {
         let x = location.x - frame.origin.x
         let y = location.y - frame.origin.y
         guard x >= 0, y >= 0, x <= frame.width, y <= frame.height else {
+            pointerIsOverPlot = false
             clearHover()
             return
         }
-        guard let time: Date = proxy.value(atX: x) else { return }
-        guard let yValue: Double = proxy.value(atY: y) else { return }
-
-        selectedTime = time
+        pointerIsOverPlot = true
+        guard let time: Date = proxy.value(atX: x), let yValue: Double = proxy.value(atY: y) else {
+            dismissHoverReadout()
+            return
+        }
 
         let picks = ChartInteraction.resolvedPicks(
             plotted: buckets.map { entry in
@@ -503,8 +512,7 @@ private struct CategoryDetailView: View {
             stateCategory: category.isStateCategory
         )
         guard !picks.isEmpty else {
-            hoverRows = []
-            tipPosition = nil
+            dismissHoverReadout()
             return
         }
 
@@ -518,6 +526,11 @@ private struct CategoryDetailView: View {
                 color: color(for: bucket.label)
             )
         }
+        guard !hoverRows.isEmpty else {
+            dismissHoverReadout()
+            return
+        }
+        selectedTime = time
 
         // Keep tip inside the plot, offset from the cursor like Prometheus.
         let tipWidth: CGFloat = 280

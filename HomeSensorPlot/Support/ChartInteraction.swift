@@ -423,6 +423,41 @@ enum ChartSeriesAssembly {
     }
 }
 
+/// Indoor series publish immediately. Outdoor is fetched after that, so the
+/// previous outdoor points stay until the new overlay replaces them.
+enum CategoryChartPublish {
+    static func keepingOutdoor(
+        indoorPoints: [ChartSeriesPoint],
+        indoorSamples: [String: [ChartInteraction.Sample]],
+        previousPoints: [ChartSeriesPoint],
+        previousSamples: [String: [ChartInteraction.Sample]],
+        outdoorID: String,
+        windowStart: Date,
+        windowEnd: Date,
+        keepOutdoor: Bool
+    ) -> (points: [ChartSeriesPoint], samples: [String: [ChartInteraction.Sample]]) {
+        var points = indoorPoints.filter { $0.sensorID != outdoorID }
+        var samples = indoorSamples
+        samples.removeValue(forKey: outdoorID)
+        guard keepOutdoor else { return (points, samples) }
+
+        points.append(contentsOf: previousPoints.filter { point in
+            point.sensorID == outdoorID
+                && point.timestamp >= windowStart
+                && point.timestamp <= windowEnd
+        })
+        if let previous = previousSamples[outdoorID] {
+            let kept = previous.filter { sample in
+                sample.timestamp >= windowStart && sample.timestamp <= windowEnd
+            }
+            if !kept.isEmpty {
+                samples[outdoorID] = kept
+            }
+        }
+        return (points, samples)
+    }
+}
+
 /// Categorical chart colors, ordered so successive entries stay easy to tell apart.
 ///
 /// Six is the set where every pair is still a different named color. Another hue
