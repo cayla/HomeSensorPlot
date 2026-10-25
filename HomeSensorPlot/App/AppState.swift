@@ -43,6 +43,8 @@ final class AppState: ObservableObject {
     @Published private(set) var categorySelectAllMode = true
 
     private var refreshTask: Task<Void, Never>?
+    /// Bumped on every chart reload. An older outdoor fetch must not publish over a newer one.
+    private var chartReloadGeneration = 0
     private var didStart = false
     private var cancellables = Set<AnyCancellable>()
     private var footerNotice: FooterNotice?
@@ -289,6 +291,8 @@ final class AppState: ObservableObject {
     }
 
     func reloadCategoryChart() async {
+        chartReloadGeneration += 1
+        let generation = chartReloadGeneration
         guard let category = selectedCategory else {
             categoryChartPoints = []
             categoryWindowSamples = [:]
@@ -349,7 +353,8 @@ final class AppState: ObservableObject {
                 await loadOutdoorWeatherOverlay(
                     window: window,
                     sampleEnd: sampleEnd,
-                    temperatureUnit: tempUnit
+                    temperatureUnit: tempUnit,
+                    generation: generation
                 )
             } else {
                 outdoorWeatherError = nil
@@ -364,7 +369,8 @@ final class AppState: ObservableObject {
     private func loadOutdoorWeatherOverlay(
         window: ChartTimeWindow,
         sampleEnd: Date,
-        temperatureUnit: TemperatureUnit
+        temperatureUnit: TemperatureUnit,
+        generation: Int
     ) async {
         let fetchStart = window.start.addingTimeInterval(-3600)
         do {
@@ -374,8 +380,10 @@ final class AppState: ObservableObject {
                     // One extra hour so the segment that crosses the left edge is available.
                     let fresh = try await weather.fetchHourlyTemperatures(from: fetchStart, to: sampleEnd)
                     try store.upsertOutdoorTemperatures(fresh)
+                    guard generation == chartReloadGeneration else { return }
                     stored = try store.outdoorTemperatures(from: fetchStart, to: sampleEnd)
                 } catch {
+                    guard generation == chartReloadGeneration else { return }
                     guard !stored.isEmpty else {
                         outdoorWeatherError = error.localizedDescription
                         categoryChartPoints = categoryChartPoints.filter {
@@ -391,6 +399,7 @@ final class AppState: ObservableObject {
                     return
                 }
             }
+            guard generation == chartReloadGeneration else { return }
             publishOutdoor(stored, window: window, temperatureUnit: temperatureUnit)
             if WeatherService.isHistoryTruncated(from: window.start) {
                 outdoorWeatherError =
@@ -399,6 +408,7 @@ final class AppState: ObservableObject {
                 outdoorWeatherError = nil
             }
         } catch {
+            guard generation == chartReloadGeneration else { return }
             outdoorWeatherError = error.localizedDescription
             categoryChartPoints = categoryChartPoints.filter { $0.sensorID != Self.outdoorWeatherSeriesID }
             var samples = categoryWindowSamples
