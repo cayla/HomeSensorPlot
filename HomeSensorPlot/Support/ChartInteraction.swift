@@ -46,6 +46,14 @@ enum ChartInteraction {
         var index: Int
     }
 
+    /// Low, high, and time-weighted average of a time-sorted series.
+    struct WindowStats: Equatable {
+        var minimum: Double
+        var maximum: Double
+        /// Nil when no drawn interval has duration, so a mean across gaps is not invented.
+        var average: Double?
+    }
+
     static func paddedDomain(_ values: [Double]) -> ClosedRange<Double> {
         guard let minV = values.min(), let maxV = values.max() else {
             return 0...1
@@ -111,9 +119,93 @@ enum ChartInteraction {
         }
     }
 
+    /// Series under the cursor come from the drawn points. The value is the
+    /// full-resolution sample at that time, and a cursor in a real hole is dropped.
+    static func resolvedPicks(
+        plotted: [HoverSeries],
+        full: [HoverSeries],
+        time: Date,
+        yValue: Double,
+        stateCategory: Bool
+    ) -> [HoverPick] {
+        let hits = picks(series: plotted, time: time, yValue: yValue, stateCategory: stateCategory)
+        let fullByID = Dictionary(uniqueKeysWithValues: full.map { ($0.id, $0) })
+        return hits.compactMap { hit in
+            guard let series = fullByID[hit.id],
+                  let index = nearestIndex(in: series.samples, to: time)
+            else { return nil }
+            let sample = series.samples[index]
+            guard abs(sample.timestamp.timeIntervalSince(time)) <= series.matchWindow else { return nil }
+            return HoverPick(id: hit.id, index: index)
+        }
+    }
+
     static func yThreshold(_ y: Double, stateCategory: Bool) -> Double {
         if stateCategory { return 0.35 }
         return max(abs(y) * 0.04, 0.75)
+    }
+
+    /// Stats for the plotted series. Nil when fewer than two samples exist.
+    ///
+    /// The average follows the drawn line: trapezoids between samples, and no
+    /// contribution across a gap where the line breaks. A burst of readings
+    /// only counts for the time it spans. When no interval has duration, there
+    /// is no average. `samples` must be sorted by time.
+    static func windowStats(samples: [Sample]) -> WindowStats? {
+        guard samples.count >= 2 else { return nil }
+
+        var minimum = samples[0].value
+        var maximum = samples[0].value
+        for sample in samples.dropFirst() {
+            minimum = min(minimum, sample.value)
+            maximum = max(maximum, sample.value)
+        }
+
+        let segments = SeriesGaps.layout(timestamps: samples.map(\.timestamp)).segments
+        var weighted = 0.0
+        var duration = 0.0
+        for index in 1..<samples.count {
+            guard segments[index] == segments[index - 1] else { continue }
+            let dt = samples[index].timestamp.timeIntervalSince(samples[index - 1].timestamp)
+            guard dt > 0 else { continue }
+            weighted += (samples[index - 1].value + samples[index].value) / 2 * dt
+            duration += dt
+        }
+
+        let average = duration > 0 ? weighted / duration : nil
+        return WindowStats(minimum: minimum, maximum: maximum, average: average)
+    }
+
+    /// `18.2–23.4° · avg 20.1°` for the window. Nil for state categories,
+    /// a single sample, or a range that still matches at two decimals.
+    /// One extra decimal is used when compact `k`/`M` rounding would hide a spread.
+    static func statsText(
+        category: SensorCategory,
+        samples: [Sample],
+        symbol: String? = nil
+    ) -> String? {
+        guard ChartAxisKind.of(category) != .state else { return nil }
+        guard let stats = windowStats(samples: samples) else { return nil }
+        guard let fractionLength = rangeFractionLength(minimum: stats.minimum, maximum: stats.maximum) else {
+            return nil
+        }
+        let low = NumberFormatting.measurement(stats.minimum, fractionLength: fractionLength)
+        let high = NumberFormatting.measurement(stats.maximum, fractionLength: fractionLength)
+        let range = "\(low)–\(NumberFormatting.withUnit(high, symbol))"
+        guard let average = stats.average else { return range }
+        let averageText = NumberFormatting.measurement(average, fractionLength: fractionLength)
+        return "\(range) · avg \(NumberFormatting.withUnit(averageText, symbol))"
+    }
+
+    /// One decimal, unless that draws the same number for both ends.
+    /// Two decimals still matching means the spread is display noise.
+    private static func rangeFractionLength(minimum: Double, maximum: Double) -> Int? {
+        let coarseLow = NumberFormatting.measurement(minimum)
+        let coarseHigh = NumberFormatting.measurement(maximum)
+        if coarseLow != coarseHigh { return 1 }
+        let fineLow = NumberFormatting.measurement(minimum, fractionLength: 2)
+        let fineHigh = NumberFormatting.measurement(maximum, fractionLength: 2)
+        return fineLow == fineHigh ? nil : 2
     }
 
     static func hoverText(category: SensorCategory, value: Double) -> String {
@@ -123,7 +215,42 @@ enum ChartInteraction {
         return NumberFormatting.measurement(value)
     }
 
+    struct SidebarReading: Equatable {
+        var text: String
+        /// A measurement sits large on the trailing edge. State words stay smaller.
+        var prominent: Bool
+    }
+
     /// Sidebar values are still in storage units. Hover text is already converted.
+    static func sidebarReading(
+        category: SensorCategory,
+        value: Double,
+        unit: String,
+        temperatureUnit: TemperatureUnit
+    ) -> SidebarReading {
+        if stateText(category: category, value: value) != nil || unit == "bool" {
+            return SidebarReading(
+                text: sidebarText(
+                    category: category,
+                    value: value,
+                    unit: unit,
+                    temperatureUnit: temperatureUnit
+                ),
+                prominent: false
+            )
+        }
+        let number: String
+        if category == .temperature {
+            number = NumberFormatting.measurement(temperatureUnit.display(fromCelsius: value))
+        } else {
+            number = NumberFormatting.measurement(value)
+        }
+        return SidebarReading(
+            text: NumberFormatting.withUnit(number, category.measurementSymbol(unit: unit)),
+            prominent: true
+        )
+    }
+
     static func sidebarText(
         category: SensorCategory,
         value: Double,
@@ -150,14 +277,49 @@ enum ChartInteraction {
         case .contact:
             return value >= 0.5 ? "open" : "closed"
         case .lock:
-            if value >= 0.5, value < 1.5 { return "secured" }
-            if value < 0.5 { return "unsecured" }
-            return nil
+            // HomeKit: 0 unsecured, 1 secured, 2 jammed, 3 unknown.
+            switch value {
+            case ..<0.5: return "unsecured"
+            case ..<1.5: return "secured"
+            case ..<2.5: return "jammed"
+            case ..<3.5: return "unknown"
+            default: return nil
+            }
         case .motion, .occupancy, .leak, .smoke:
             return value >= 0.5 ? "detected" : "clear"
         default:
             return nil
         }
+    }
+}
+
+/// Which sidebar rows are drawn.
+///
+/// While All is in effect, the first tap keeps that row and clears the rest.
+/// Every later tap toggles the row that was hit.
+enum CategoryChartSelection {
+    struct State: Equatable {
+        var enabledIDs: Set<String>
+        var outdoorEnabled: Bool
+        var selectsAll: Bool
+    }
+
+    static func tap(_ id: String, outdoorID: String, state: State) -> State {
+        if state.selectsAll {
+            if id == outdoorID {
+                return State(enabledIDs: [], outdoorEnabled: true, selectsAll: false)
+            }
+            return State(enabledIDs: [id], outdoorEnabled: false, selectsAll: false)
+        }
+        var next = state
+        if id == outdoorID {
+            next.outdoorEnabled.toggle()
+        } else if next.enabledIDs.contains(id) {
+            next.enabledIDs.remove(id)
+        } else {
+            next.enabledIDs.insert(id)
+        }
+        return next
     }
 }
 
@@ -203,10 +365,44 @@ enum ChartSeriesAssembly {
                 sensorID: sensorID,
                 label: label,
                 timestamp: time,
-                value: sampleValue,
-                isAnchor: false
+                value: sampleValue
             )
         }
+    }
+
+    /// Chart points stay capped. The window samples do not, so a spike between
+    /// stride picks still counts in the sidebar range.
+    static func sensorSeries(
+        sensorID: String,
+        label: String,
+        windowStart: Date,
+        samples: [SamplePoint],
+        anchor: SamplePoint?,
+        maxPoints: Int,
+        value: (SamplePoint) -> Double
+    ) -> (plotted: [ChartSeriesPoint], window: [ChartInteraction.Sample]) {
+        let windowPoints = seriesPoints(
+            sensorID: sensorID,
+            label: label,
+            windowStart: windowStart,
+            inWindow: samples,
+            anchor: anchor,
+            timestamp: { $0.timestamp },
+            value: value
+        )
+        let plotted = seriesPoints(
+            sensorID: sensorID,
+            label: label,
+            windowStart: windowStart,
+            inWindow: SeriesDownsample.stride(samples, maxPoints: maxPoints),
+            anchor: anchor,
+            timestamp: { $0.timestamp },
+            value: value
+        )
+        let window = windowPoints.map {
+            ChartInteraction.Sample(timestamp: $0.timestamp, value: $0.value)
+        }
+        return (plotted, window)
     }
 
     /// Same rule as the drawn line: a gap wider than the series' usual spacing stays broken.
@@ -224,6 +420,41 @@ enum ChartSeriesAssembly {
         guard span > 0 else { return end.1 }
         let fraction = min(max(time.timeIntervalSince(start.0) / span, 0), 1)
         return start.1 + fraction * (end.1 - start.1)
+    }
+}
+
+/// Indoor series publish immediately. Outdoor is fetched after that, so the
+/// previous outdoor points stay until the new overlay replaces them.
+enum CategoryChartPublish {
+    static func keepingOutdoor(
+        indoorPoints: [ChartSeriesPoint],
+        indoorSamples: [String: [ChartInteraction.Sample]],
+        previousPoints: [ChartSeriesPoint],
+        previousSamples: [String: [ChartInteraction.Sample]],
+        outdoorID: String,
+        windowStart: Date,
+        windowEnd: Date,
+        keepOutdoor: Bool
+    ) -> (points: [ChartSeriesPoint], samples: [String: [ChartInteraction.Sample]]) {
+        var points = indoorPoints.filter { $0.sensorID != outdoorID }
+        var samples = indoorSamples
+        samples.removeValue(forKey: outdoorID)
+        guard keepOutdoor else { return (points, samples) }
+
+        points.append(contentsOf: previousPoints.filter { point in
+            point.sensorID == outdoorID
+                && point.timestamp >= windowStart
+                && point.timestamp <= windowEnd
+        })
+        if let previous = previousSamples[outdoorID] {
+            let kept = previous.filter { sample in
+                sample.timestamp >= windowStart && sample.timestamp <= windowEnd
+            }
+            if !kept.isEmpty {
+                samples[outdoorID] = kept
+            }
+        }
+        return (points, samples)
     }
 }
 

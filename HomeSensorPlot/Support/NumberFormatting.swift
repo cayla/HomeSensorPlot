@@ -1,12 +1,35 @@
 import Foundation
 
 enum NumberFormatting {
-    /// Measurement values for UI — respects system decimal / grouping separators.
-    static func measurement(_ value: Double, fractionLength: Int = 2) -> String {
-        value.formatted(
+    /// Measurement values for UI. Always the same number of decimals, so 64 and 64.2 line up.
+    /// Thousands and millions compact, so 5347.7 reads as 5.3k.
+    static func measurement(_ value: Double, fractionLength: Int = 1) -> String {
+        let (scaled, suffix) = compactScale(value)
+        let digits = scaled.formatted(
             .number
-                .precision(.fractionLength(0...fractionLength))
+                .precision(.fractionLength(fractionLength))
         )
+        return digits + suffix
+    }
+
+    private static func compactScale(_ value: Double) -> (Double, String) {
+        let magnitude = abs(value)
+        if magnitude >= 1_000_000 {
+            return (value / 1_000_000, "M")
+        }
+        if magnitude >= 1_000 {
+            return (value / 1_000, "k")
+        }
+        return (value, "")
+    }
+
+    /// `67.6°` and `46%` sit against the number. `lux` and `ppm` take a space.
+    static func withUnit(_ number: String, _ symbol: String?) -> String {
+        guard let symbol else { return number }
+        if symbol == "°" || symbol == "%" {
+            return number + symbol
+        }
+        return number + " " + symbol
     }
 
     /// Port / host:port — never group digits (9,105 breaks URLs and Slack paste).

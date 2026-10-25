@@ -18,6 +18,8 @@ final class AppState: ObservableObject {
     @Published var selectedCategory: SensorCategory?
     @Published var categoryEnabledSensorIDs: Set<String> = []
     @Published var categoryChartPoints: [ChartSeriesPoint] = []
+    /// Full-window samples behind each sidebar range. The chart series is downsampled separately.
+    @Published var categoryWindowSamples: [String: [ChartInteraction.Sample]] = [:]
     @Published var outdoorChartEnabled = true
     @Published var outdoorWeatherError: String?
     @Published var timeBox: TimeBox = .lastDay
@@ -41,6 +43,8 @@ final class AppState: ObservableObject {
     @Published private(set) var categorySelectAllMode = true
 
     private var refreshTask: Task<Void, Never>?
+    /// Bumped on every chart reload. An older outdoor fetch must not publish over a newer one.
+    private var chartReloadGeneration = 0
     private var didStart = false
     private var cancellables = Set<AnyCancellable>()
     private var footerNotice: FooterNotice?
@@ -243,6 +247,7 @@ final class AppState: ObservableObject {
     func closeCategory() {
         selectedCategory = nil
         categoryChartPoints = []
+        categoryWindowSamples = [:]
         categoryEnabledSensorIDs = []
         outdoorWeatherError = nil
     }
@@ -252,12 +257,24 @@ final class AppState: ObservableObject {
         closeCategory()
     }
 
-    func setCategorySensor(_ id: String, enabled: Bool) {
-        categorySelectAllMode = false
-        if enabled {
-            categoryEnabledSensorIDs.insert(id)
-        } else {
-            categoryEnabledSensorIDs.remove(id)
+    func tapCategoryChartRow(_ id: String) {
+        let wasOutdoor = outdoorChartEnabled
+        let next = CategoryChartSelection.tap(
+            id,
+            outdoorID: Self.outdoorWeatherSeriesID,
+            state: CategoryChartSelection.State(
+                enabledIDs: categoryEnabledSensorIDs,
+                outdoorEnabled: outdoorChartEnabled,
+                selectsAll: categorySelectAllMode
+            )
+        )
+        categoryEnabledSensorIDs = next.enabledIDs
+        outdoorChartEnabled = next.outdoorEnabled
+        categorySelectAllMode = next.selectsAll
+        // A failed outdoor fetch can be retried by showing the line again.
+        // Hiding it must not drop the samples — the sidebar still shows them.
+        if !wasOutdoor, next.outdoorEnabled {
+            Task { await reloadCategoryChart() }
         }
     }
 
@@ -274,8 +291,11 @@ final class AppState: ObservableObject {
     }
 
     func reloadCategoryChart() async {
+        chartReloadGeneration += 1
+        let generation = chartReloadGeneration
         guard let category = selectedCategory else {
             categoryChartPoints = []
+            categoryWindowSamples = [:]
             return
         }
 
@@ -283,6 +303,7 @@ final class AppState: ObservableObject {
         let sampleEnd = window.sampleEnd(now: .now)
         let members = category.sensors(from: sensors)
         var points: [ChartSeriesPoint] = []
+        var windowSamples: [String: [ChartInteraction.Sample]] = [:]
         let tempUnit = settings.temperatureUnit
 
         do {
@@ -290,34 +311,50 @@ final class AppState: ObservableObject {
                 let samples = try store.samples(sensorID: sensor.id, from: window.start, to: sampleEnd)
                 // Keep per-series points modest — large multi-series charts beachball on hover otherwise.
                 let perSeriesCap = max(80, 600 / max(members.count, 1))
-                let downsampled = SeriesDownsample.stride(samples, maxPoints: perSeriesCap)
                 let anchor = try store.latestSample(sensorID: sensor.id, before: window.start)
-                points.append(contentsOf: ChartSeriesAssembly.seriesPoints(
+                let series = ChartSeriesAssembly.sensorSeries(
                     sensorID: sensor.id,
                     label: category.chartSeriesLabel(for: sensor),
                     windowStart: window.start,
-                    inWindow: downsampled,
+                    samples: samples,
                     anchor: anchor,
-                    timestamp: { $0.timestamp },
+                    maxPoints: perSeriesCap,
                     value: { sample in
                         if category == .temperature {
                             return tempUnit.display(fromCelsius: sample.value)
                         }
                         return sample.value
                     }
-                ))
+                )
+                points.append(contentsOf: series.plotted)
+                windowSamples[sensor.id] = series.window
             }
 
             // Publish HomeKit series immediately — never block the chart on weather/location.
-            let indoorOnly = points.filter { $0.sensorID != Self.outdoorWeatherSeriesID }
-            categoryChartPoints = indoorOnly
+            // Keep the outdoor series already on screen until the overlay replaces it.
+            let keepOutdoor = category == .temperature && settings.showOutdoorWeather
+            let published = CategoryChartPublish.keepingOutdoor(
+                indoorPoints: points,
+                indoorSamples: windowSamples,
+                previousPoints: categoryChartPoints,
+                previousSamples: categoryWindowSamples,
+                outdoorID: Self.outdoorWeatherSeriesID,
+                windowStart: window.start,
+                windowEnd: window.end,
+                keepOutdoor: keepOutdoor
+            )
+            categoryChartPoints = published.points
+            categoryWindowSamples = published.samples
 
-            if category == .temperature, settings.showOutdoorWeather, outdoorChartEnabled {
+            // Load outdoor even when the line is hidden. The chart filters it;
+            // the sidebar still shows the current reading and the window.
+            if keepOutdoor {
                 weather.configure(allowIPGeolocationFallback: settings.allowIPGeolocationFallback)
                 await loadOutdoorWeatherOverlay(
                     window: window,
                     sampleEnd: sampleEnd,
-                    temperatureUnit: tempUnit
+                    temperatureUnit: tempUnit,
+                    generation: generation
                 )
             } else {
                 outdoorWeatherError = nil
@@ -325,13 +362,15 @@ final class AppState: ObservableObject {
         } catch {
             lastRefreshError = error.localizedDescription
             categoryChartPoints = []
+            categoryWindowSamples = [:]
         }
     }
 
     private func loadOutdoorWeatherOverlay(
         window: ChartTimeWindow,
         sampleEnd: Date,
-        temperatureUnit: TemperatureUnit
+        temperatureUnit: TemperatureUnit,
+        generation: Int
     ) async {
         let fetchStart = window.start.addingTimeInterval(-3600)
         do {
@@ -341,13 +380,18 @@ final class AppState: ObservableObject {
                     // One extra hour so the segment that crosses the left edge is available.
                     let fresh = try await weather.fetchHourlyTemperatures(from: fetchStart, to: sampleEnd)
                     try store.upsertOutdoorTemperatures(fresh)
+                    guard generation == chartReloadGeneration else { return }
                     stored = try store.outdoorTemperatures(from: fetchStart, to: sampleEnd)
                 } catch {
+                    guard generation == chartReloadGeneration else { return }
                     guard !stored.isEmpty else {
                         outdoorWeatherError = error.localizedDescription
                         categoryChartPoints = categoryChartPoints.filter {
                             $0.sensorID != Self.outdoorWeatherSeriesID
                         }
+                        var samples = categoryWindowSamples
+                        samples.removeValue(forKey: Self.outdoorWeatherSeriesID)
+                        categoryWindowSamples = samples
                         return
                     }
                     publishOutdoor(stored, window: window, temperatureUnit: temperatureUnit)
@@ -355,6 +399,7 @@ final class AppState: ObservableObject {
                     return
                 }
             }
+            guard generation == chartReloadGeneration else { return }
             publishOutdoor(stored, window: window, temperatureUnit: temperatureUnit)
             if WeatherService.isHistoryTruncated(from: window.start) {
                 outdoorWeatherError =
@@ -363,8 +408,12 @@ final class AppState: ObservableObject {
                 outdoorWeatherError = nil
             }
         } catch {
+            guard generation == chartReloadGeneration else { return }
             outdoorWeatherError = error.localizedDescription
             categoryChartPoints = categoryChartPoints.filter { $0.sensorID != Self.outdoorWeatherSeriesID }
+            var samples = categoryWindowSamples
+            samples.removeValue(forKey: Self.outdoorWeatherSeriesID)
+            categoryWindowSamples = samples
         }
     }
 
@@ -389,6 +438,9 @@ final class AppState: ObservableObject {
         var merged = categoryChartPoints.filter { $0.sensorID != Self.outdoorWeatherSeriesID }
         merged.append(contentsOf: outdoorPoints)
         categoryChartPoints = merged
+        categoryWindowSamples[Self.outdoorWeatherSeriesID] = outdoorPoints.map {
+            ChartInteraction.Sample(timestamp: $0.timestamp, value: $0.value)
+        }
     }
 
     func setHidden(sensorID: String, hidden: Bool) {
@@ -441,6 +493,7 @@ final class AppState: ObservableObject {
             try store.deleteAllCollectedData()
             sensors = []
             categoryChartPoints = []
+            categoryWindowSamples = [:]
             categoryEnabledSensorIDs = []
             lastRefreshError = nil
             Task {

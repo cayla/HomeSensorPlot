@@ -80,6 +80,8 @@ private struct CategoryDetailView: View {
     @State private var selectedTime: Date?
     @State private var hoverRows: [HoverRow] = []
     @State private var tipPosition: CGPoint?
+    /// Pointer is inside the plot. A hole hides the rule without bringing the hint back.
+    @State private var pointerIsOverPlot = false
     /// Sidebar hover. Wins over the chart's nearest-line dimming while the pointer is in the list.
     @State private var sidebarHighlightID: String?
 
@@ -92,6 +94,10 @@ private struct CategoryDetailView: View {
 
     private var categorySensors: [SensorRecord] {
         category.sensors(from: appState.sensors)
+    }
+
+    private var presentCategories: [SensorCategory] {
+        SensorCategory.categoriesPresent(in: appState.sensors)
     }
 
     private var enabledPoints: [ChartSeriesPoint] {
@@ -109,73 +115,46 @@ private struct CategoryDetailView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 12) {
-                Button {
-                    appState.closeCategory()
-                } label: {
-                    Label("Categories", systemImage: "chevron.left")
-                }
-                .buttonStyle(.borderless)
-
-                HStack(spacing: 8) {
-                    Label(category.title, systemImage: category.systemImage)
-                        .font(.headline)
-                    if category == .temperature {
-                        Text(appState.settings.temperatureUnit.shortSymbol)
-                            .font(.headline)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-
-                Spacer()
-
-                Picker("Range", selection: Binding(
-                    get: { appState.timeBox },
-                    set: { newValue in
-                        appState.timeBox = newValue
-                        Task { await appState.reloadCategoryChart() }
-                    }
-                )) {
-                    ForEach(TimeBox.allCases) { box in
-                        Text(box.rawValue).tag(box)
-                    }
-                }
-                .pickerStyle(.menu)
-                .labelsHidden()
-                .fixedSize()
-            }
-
-            if appState.timeBox == .custom {
-                DatePicker(
-                    "From",
-                    selection: Binding(
-                        get: { appState.customStart },
-                        set: { newValue in
-                            appState.customStart = newValue
-                            Task { await appState.reloadCategoryChart() }
-                        }
-                    ),
-                    displayedComponents: [.date, .hourAndMinute]
-                )
-                .datePickerStyle(.compact)
-            }
-
-            if let weatherError = appState.outdoorWeatherError, category == .temperature {
-                Text(weatherError)
-                    .font(.caption2)
-                    .foregroundStyle(.orange)
-            }
-
+            let chartSeries = seriesIndex
             HStack(alignment: .top, spacing: 0) {
-                sensorSidebar
-                    .frame(width: 260)
+                sensorSidebar(statsBySensorID: windowStatsBySensorID)
+                    .frame(width: 300)
                     .padding(.trailing, 12)
 
                 Divider()
 
-                chartPane
-                    .padding(.leading, 12)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                VStack(alignment: .leading, spacing: 8) {
+                    chartToolbar
+
+                    if appState.timeBox == .custom {
+                        HStack {
+                            Spacer(minLength: 0)
+                            DatePicker(
+                                "From",
+                                selection: Binding(
+                                    get: { appState.customStart },
+                                    set: { newValue in
+                                        appState.customStart = newValue
+                                        Task { await appState.reloadCategoryChart() }
+                                    }
+                                ),
+                                displayedComponents: [.date, .hourAndMinute]
+                            )
+                            .datePickerStyle(.compact)
+                        }
+                    }
+
+                    if let weatherError = appState.outdoorWeatherError, category == .temperature {
+                        Text(weatherError)
+                            .font(.caption2)
+                            .foregroundStyle(.orange)
+                    }
+
+                    chartPane(index: chartSeries)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+                .padding(.leading, 12)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
@@ -189,37 +168,44 @@ private struct CategoryDetailView: View {
         }
     }
 
-    private var sensorSidebar: some View {
+    private func sensorSidebar(statsBySensorID: [String: String]) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             // Keep outside the List — Catalyst Lists often steal taps from views stacked above them.
-            HStack(alignment: .center, spacing: 0) {
-                Text("Sensors")
-                    .font(.subheadline.weight(.semibold))
-                Spacer(minLength: 8)
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text("Sensor")
+                        .font(.subheadline.weight(.semibold))
+                    Spacer(minLength: 8)
+                    Text("Current")
+                        .font(.subheadline.weight(.semibold))
+                }
                 HStack(spacing: 12) {
                     Button {
                         appState.setAllCategorySensors(enabled: true)
                     } label: {
                         Text("All")
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 8)
+                            .padding(.horizontal, 2)
+                            .padding(.vertical, 4)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    .help("Click a sensor to show or hide it. The first click keeps only that sensor.")
                     Button {
                         appState.setAllCategorySensors(enabled: false)
                     } label: {
                         Text("None")
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 8)
+                            .padding(.horizontal, 2)
+                            .padding(.vertical, 4)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    .help("Click a sensor to show or hide it. The first click keeps only that sensor.")
                 }
-                .font(.subheadline.weight(.semibold))
+                .font(.caption)
+                .foregroundStyle(.secondary)
             }
-            .padding(.leading, 4)
-            .padding(.trailing, 20)
+            .padding(.leading, 12)
+            .padding(.trailing, 16)
             .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
             .background(.background)
@@ -233,57 +219,37 @@ private struct CategoryDetailView: View {
             } else {
                 List {
                     if category == .temperature, appState.settings.showOutdoorWeather {
-                        Toggle(isOn: Binding(
-                            get: { appState.outdoorChartEnabled },
-                            set: { enabled in
-                                appState.outdoorChartEnabled = enabled
-                                Task { await appState.reloadCategoryChart() }
-                            }
-                        )) {
+                        sidebarRow(id: AppState.outdoorWeatherSeriesID) {
                             sensorRow(
                                 title: "Outdoor (weather)",
                                 subtitle: outdoorSubtitle,
-                                unit: nil,
                                 value: outdoorLatestText,
+                                prominentValue: outdoorLatestText != nil,
+                                stats: statsBySensorID[AppState.outdoorWeatherSeriesID],
                                 color: activeColorBySensorID[AppState.outdoorWeatherSeriesID]
-                            )
-                        }
-                        .toggleStyle(.switch)
-                        .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 28))
-                        .listRowBackground(rowBackground(for: AppState.outdoorWeatherSeriesID))
-                        .onContinuousHover { phase in
-                            setSidebarHighlight(
-                                AppState.outdoorWeatherSeriesID,
-                                inside: hoverIsActive(phase)
                             )
                         }
                     }
 
                     ForEach(categorySensors) { sensor in
-                        Toggle(isOn: Binding(
-                            get: { appState.categoryEnabledSensorIDs.contains(sensor.id) },
-                            set: { appState.setCategorySensor(sensor.id, enabled: $0) }
-                        )) {
+                        let stats = statsBySensorID[sensor.id]
+                        let reading = sensor.lastValue.map {
+                            ChartInteraction.sidebarReading(
+                                category: category,
+                                value: $0,
+                                unit: sensor.unit,
+                                temperatureUnit: appState.settings.temperatureUnit
+                            )
+                        }
+                        sidebarRow(id: sensor.id) {
                             sensorRow(
                                 title: sensor.accessoryName,
                                 subtitle: sensor.roomName.isEmpty ? sensor.homeName : sensor.roomName,
-                                unit: category != .temperature && !category.isStateCategory ? sensor.unit : nil,
-                                value: sensor.lastValue.map {
-                                    ChartInteraction.sidebarText(
-                                        category: category,
-                                        value: $0,
-                                        unit: sensor.unit,
-                                        temperatureUnit: appState.settings.temperatureUnit
-                                    )
-                                },
+                                value: reading?.text,
+                                prominentValue: reading?.prominent == true,
+                                stats: stats,
                                 color: activeColorBySensorID[sensor.id]
                             )
-                        }
-                        .toggleStyle(.switch)
-                        .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 28))
-                        .listRowBackground(rowBackground(for: sensor.id))
-                        .onContinuousHover { phase in
-                            setSidebarHighlight(sensor.id, inside: hoverIsActive(phase))
                         }
                     }
                 }
@@ -295,7 +261,69 @@ private struct CategoryDetailView: View {
         }
     }
 
-    private var chartPane: some View {
+    /// Up to the category grid, and the category menu, centered on the chart. The time range stays at the trailing edge.
+    private var chartToolbar: some View {
+        HStack(spacing: 12) {
+            Spacer(minLength: 0)
+            Button {
+                appState.closeCategory()
+            } label: {
+                Image(systemName: "square.grid.2x2")
+                    .font(.body.weight(.semibold))
+                    .frame(width: 28, height: 28)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.borderless)
+            .accessibilityLabel("Categories")
+
+            Menu {
+                ForEach(presentCategories) { item in
+                    Button {
+                        guard item != category else { return }
+                        appState.openCategory(item)
+                    } label: {
+                        if item == category {
+                            Label(item.title, systemImage: "checkmark")
+                        } else {
+                            Label(item.title, systemImage: item.systemImage)
+                        }
+                    }
+                }
+            } label: {
+                HStack(spacing: 6) {
+                    Label(category.title, systemImage: category.systemImage)
+                    if category == .temperature {
+                        Text(appState.settings.temperatureUnit.shortSymbol)
+                            .foregroundStyle(.secondary)
+                    }
+                    Image(systemName: "chevron.down")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                }
+                .font(.headline)
+            }
+            .buttonStyle(.borderless)
+            Spacer(minLength: 0)
+        }
+        .overlay(alignment: .trailing) {
+            Picker("Range", selection: Binding(
+                get: { appState.timeBox },
+                set: { newValue in
+                    appState.timeBox = newValue
+                    Task { await appState.reloadCategoryChart() }
+                }
+            )) {
+                ForEach(TimeBox.allCases) { box in
+                    Text(box.rawValue).tag(box)
+                }
+            }
+            .pickerStyle(.menu)
+            .labelsHidden()
+            .fixedSize()
+        }
+    }
+
+    private func chartPane(index: SeriesIndex) -> some View {
         Group {
             if enabledPoints.isEmpty {
                 ContentUnavailableView(
@@ -303,11 +331,10 @@ private struct CategoryDetailView: View {
                     systemImage: "chart.xyaxis.line",
                     description: Text(categorySensors.isEmpty
                         ? "Nothing in this category yet."
-                        : "Toggle sensors on in the sidebar, or widen the time range.")
+                        : "Click a sensor in the sidebar, or widen the time range.")
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                let index = seriesIndex
                 ZStack(alignment: .topLeading) {
                     Chart {
                         ForEach(drawingOrder(index.plotted)) { item in
@@ -367,6 +394,7 @@ private struct CategoryDetailView: View {
                                             buckets: index.buckets
                                         )
                                     case .ended:
+                                        pointerIsOverPlot = false
                                         clearHover()
                                     }
                                 }
@@ -374,8 +402,8 @@ private struct CategoryDetailView: View {
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                    if selectedTime == nil {
-                        Text("Hover a line to inspect")
+                    if selectedTime == nil, !pointerIsOverPlot {
+                        Text("Hover mouse over lines to inspect")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                             .padding(10)
@@ -434,6 +462,10 @@ private struct CategoryDetailView: View {
     }
 
     private func clearHover() {
+        dismissHoverReadout()
+    }
+
+    private func dismissHoverReadout() {
         selectedTime = nil
         hoverRows = []
         tipPosition = nil
@@ -450,21 +482,28 @@ private struct CategoryDetailView: View {
         let x = location.x - frame.origin.x
         let y = location.y - frame.origin.y
         guard x >= 0, y >= 0, x <= frame.width, y <= frame.height else {
+            pointerIsOverPlot = false
             clearHover()
             return
         }
-        guard let time: Date = proxy.value(atX: x) else { return }
-        guard let yValue: Double = proxy.value(atY: y) else { return }
+        pointerIsOverPlot = true
+        guard let time: Date = proxy.value(atX: x), let yValue: Double = proxy.value(atY: y) else {
+            dismissHoverReadout()
+            return
+        }
 
-        selectedTime = time
-
-        let picks = ChartInteraction.picks(
-            series: buckets.map { entry in
+        let picks = ChartInteraction.resolvedPicks(
+            plotted: buckets.map { entry in
                 ChartInteraction.HoverSeries(
                     id: entry.key,
-                    samples: entry.value.points.map {
-                        ChartInteraction.Sample(timestamp: $0.timestamp, value: $0.value)
-                    },
+                    samples: entry.value.plotted,
+                    matchWindow: entry.value.pickWindow
+                )
+            },
+            full: buckets.map { entry in
+                ChartInteraction.HoverSeries(
+                    id: entry.key,
+                    samples: entry.value.samples,
                     matchWindow: entry.value.matchWindow
                 )
             },
@@ -473,20 +512,25 @@ private struct CategoryDetailView: View {
             stateCategory: category.isStateCategory
         )
         guard !picks.isEmpty else {
-            hoverRows = []
-            tipPosition = nil
+            dismissHoverReadout()
             return
         }
 
         hoverRows = picks.compactMap { pick in
-            guard let point = buckets[pick.id]?.points[pick.index] else { return nil }
+            guard let bucket = buckets[pick.id], bucket.samples.indices.contains(pick.index) else { return nil }
+            let sample = bucket.samples[pick.index]
             return HoverRow(
                 id: pick.id,
-                label: point.label,
-                valueText: ChartInteraction.hoverText(category: category, value: point.value),
-                color: color(for: point.label)
+                label: bucket.label,
+                valueText: ChartInteraction.hoverText(category: category, value: sample.value),
+                color: color(for: bucket.label)
             )
         }
+        guard !hoverRows.isEmpty else {
+            dismissHoverReadout()
+            return
+        }
+        selectedTime = time
 
         // Keep tip inside the plot, offset from the cursor like Prometheus.
         let tipWidth: CGFloat = 280
@@ -505,17 +549,19 @@ private struct CategoryDetailView: View {
         appState.timeBox.window(customStart: appState.customStart).plottedDomain()
     }
 
-    /// Percent metrics keep a fixed 0…100 domain; states stay on 0/1; everything else zooms to data.
+    /// Percent metrics keep a fixed 0…100 domain. Lock uses the four HomeKit states.
+    /// Other states stay on 0/1. Everything else zooms to data.
     private var yAxisDomain: ClosedRange<Double> {
-        ChartAxisKind.of(category).domain(
-            values: enabledPoints.filter { !$0.isAnchor }.map(\.value)
-        )
+        if category == .lock {
+            return -0.05...3.05
+        }
+        return ChartAxisKind.of(category).domain(values: enabledPoints.map(\.value))
     }
 
     private var yAxisMarks: some AxisContent {
         switch ChartAxisKind.of(category) {
         case .percent:
-            AxisMarks(values: [0, 25, 50, 75, 100]) { value in
+            AxisMarks(position: .leading, values: [0, 25, 50, 75, 100]) { value in
                 AxisGridLine()
                 AxisTick()
                 AxisValueLabel {
@@ -525,7 +571,10 @@ private struct CategoryDetailView: View {
                 }
             }
         case .state:
-            AxisMarks(values: [0, 1]) { value in
+            AxisMarks(
+                position: .leading,
+                values: category == .lock ? [0.0, 1, 2, 3] : [0.0, 1]
+            ) { value in
                 AxisGridLine()
                 AxisTick()
                 AxisValueLabel {
@@ -535,7 +584,7 @@ private struct CategoryDetailView: View {
                 }
             }
         case .continuous:
-            AxisMarks(values: .automatic(desiredCount: 5)) { value in
+            AxisMarks(position: .leading, values: .automatic(desiredCount: 5)) { value in
                 AxisGridLine()
                 AxisTick()
                 AxisValueLabel {
@@ -577,14 +626,21 @@ private struct CategoryDetailView: View {
     }
 
     private struct SeriesBucket {
-        var points: [ChartSeriesPoint]
+        var label: String
+        /// Drawn points. These decide which series is under the cursor.
+        var plotted: [ChartInteraction.Sample]
+        /// Every stored sample in the window. The tooltip reads this.
+        var samples: [ChartInteraction.Sample]
+        /// Time gate for the drawn points, which are farther apart.
+        var pickWindow: TimeInterval
+        /// Time gate from the full series, so a cursor in a hole does not match.
         var matchWindow: TimeInterval
     }
 
     private struct PlottedPoint: Identifiable {
         var point: ChartSeriesPoint
         var segmentID: String
-        /// A series with one in-window sample. A line needs two points, so the sample is a dot.
+        /// A segment with one plotted point. A line needs two points, so the sample is a dot.
         var drawsMarker: Bool
         var id: String { point.id }
     }
@@ -592,6 +648,32 @@ private struct CategoryDetailView: View {
     private struct SeriesIndex {
         var plotted: [PlottedPoint]
         var buckets: [String: SeriesBucket]
+    }
+
+    /// Window summary for every loaded series, including rows toggled off the chart.
+    /// Built from the full window, not the downsampled line, so a spike the chart
+    /// skips still appears here. Hiding the line must not drop the caption.
+    private var windowStatsBySensorID: [String: String] {
+        var texts: [String: String] = [:]
+        for (sensorID, samples) in appState.categoryWindowSamples {
+            let ordered = samples.sorted { $0.timestamp < $1.timestamp }
+            if let text = ChartInteraction.statsText(
+                category: category,
+                samples: ordered,
+                symbol: measurementSymbol(for: sensorID)
+            ) {
+                texts[sensorID] = text
+            }
+        }
+        return texts
+    }
+
+    private func measurementSymbol(for sensorID: String) -> String? {
+        if sensorID == AppState.outdoorWeatherSeriesID {
+            return "°"
+        }
+        let unit = categorySensors.first { $0.id == sensorID }?.unit ?? ""
+        return category.measurementSymbol(unit: unit)
     }
 
     /// Time-sorted points, split where `SeriesGaps` says the line should stop.
@@ -605,26 +687,43 @@ private struct CategoryDetailView: View {
             grouped[point.sensorID, default: []].append(point)
         }
 
-        var visibleCount: [String: Int] = [:]
-        for point in enabledPoints where !point.isAnchor {
-            visibleCount[point.sensorID, default: 0] += 1
-        }
-
         var plotted: [PlottedPoint] = []
         plotted.reserveCapacity(enabledPoints.count)
         var buckets: [String: SeriesBucket] = [:]
         buckets.reserveCapacity(order.count)
         for sensorID in order {
             let sorted = grouped[sensorID, default: []].sorted { $0.timestamp < $1.timestamp }
-            let layout = SeriesGaps.layout(timestamps: sorted.map(\.timestamp))
-            buckets[sensorID] = SeriesBucket(points: sorted, matchWindow: layout.matchWindow)
-            let markLonelySample = visibleCount[sensorID] == 1
+            let full = (appState.categoryWindowSamples[sensorID] ?? [])
+                .sorted { $0.timestamp < $1.timestamp }
+            let gapTimestamps = full.isEmpty ? sorted.map(\.timestamp) : full.map(\.timestamp)
+            let layout = SeriesGaps.layout(timestamps: gapTimestamps)
+            let pickLayout = SeriesGaps.layout(timestamps: sorted.map(\.timestamp))
+            buckets[sensorID] = SeriesBucket(
+                label: sorted.first?.label ?? "",
+                plotted: sorted.map {
+                    ChartInteraction.Sample(timestamp: $0.timestamp, value: $0.value)
+                },
+                samples: full.isEmpty
+                    ? sorted.map { ChartInteraction.Sample(timestamp: $0.timestamp, value: $0.value) }
+                    : full,
+                pickWindow: pickLayout.matchWindow,
+                matchWindow: layout.matchWindow
+            )
+            let segmentIDs = sorted.enumerated().map { offset, point in
+                let segment = SeriesGaps.segmentIndex(
+                    at: point.timestamp,
+                    timestamps: gapTimestamps,
+                    segments: layout.segments
+                )
+                return segment.map { "\(sensorID)#\($0)" } ?? "\(sensorID)#off-\(offset)"
+            }
+            let dots = SeriesGaps.lonePointIndexes(segmentIDs: segmentIDs)
             for (offset, point) in sorted.enumerated() {
                 plotted.append(
                     PlottedPoint(
                         point: point,
-                        segmentID: "\(sensorID)#\(layout.segments[offset])",
-                        drawsMarker: markLonelySample && !point.isAnchor
+                        segmentID: segmentIDs[offset],
+                        drawsMarker: dots.contains(offset)
                     )
                 )
             }
@@ -649,36 +748,68 @@ private struct CategoryDetailView: View {
         return rest
     }
 
+    private func sidebarRow<Content: View>(
+        id: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        Button {
+            appState.tapCategoryChartRow(id)
+        } label: {
+            content()
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .listRowInsets(EdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 16))
+        .listRowBackground(rowBackground(for: id))
+        .onContinuousHover { phase in
+            setSidebarHighlight(id, inside: hoverIsActive(phase))
+        }
+    }
+
     private func sensorRow(
         title: String,
         subtitle: String,
-        unit: String?,
         value: String?,
+        prominentValue: Bool,
+        stats: String?,
         color: Color?
     ) -> some View {
-        HStack(alignment: .top, spacing: 8) {
-            SeriesSwatch(color: color ?? Color.secondary.opacity(0.45))
-                .padding(.top, 3)
-            VStack(alignment: .leading, spacing: 2) {
+        let active = color != nil
+        return VStack(alignment: .leading, spacing: 2) {
+            HStack(alignment: .top, spacing: 8) {
+                SeriesSwatch(color: color ?? Color.secondary.opacity(0.45))
+                    .padding(.top, 4)
                 Text(title)
                     .font(.caption.weight(.semibold))
                     .lineLimit(2)
-                    .foregroundStyle(color == nil ? .secondary : .primary)
+                    .foregroundStyle(active ? .primary : .secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                if let value {
+                    Text(value)
+                        .font(prominentValue
+                            ? .title3.monospacedDigit().weight(.semibold)
+                            : .subheadline.weight(.semibold))
+                        .foregroundStyle(active ? .primary : .secondary)
+                        .multilineTextAlignment(.trailing)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.7)
+                        .layoutPriority(1)
+                }
+            }
+            VStack(alignment: .leading, spacing: 2) {
                 Text(subtitle)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
-                if let unit {
-                    Text(unit)
-                        .font(.caption2.monospaced())
-                        .foregroundStyle(.secondary)
-                }
-                if let value {
-                    Text(value)
+                if let stats {
+                    Text(stats)
                         .font(.caption2.monospacedDigit())
                         .foregroundStyle(.secondary)
+                        .lineLimit(2)
                 }
             }
+            .padding(.leading, 16)
         }
     }
 
@@ -720,7 +851,7 @@ private struct CategoryDetailView: View {
             .filter({ $0.sensorID == AppState.outdoorWeatherSeriesID })
             .max(by: { $0.timestamp < $1.timestamp })
         else { return nil }
-        return NumberFormatting.measurement(latest.value)
+        return NumberFormatting.withUnit(NumberFormatting.measurement(latest.value), "°")
     }
 
 }

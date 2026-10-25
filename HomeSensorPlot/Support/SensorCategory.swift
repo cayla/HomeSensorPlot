@@ -62,6 +62,26 @@ enum SensorCategory: String, CaseIterable, Identifiable, Hashable, Sendable {
         }
     }
 
+    /// Sidebar suffix. Temperature is `°` alone — the page title already shows °C or °F.
+    func measurementSymbol(unit: String) -> String? {
+        switch self {
+        case .temperature:
+            return "°"
+        case .humidity, .battery, .filterLife:
+            return "%"
+        case .light:
+            return "lux"
+        case .air:
+            switch unit {
+            case "ppm": return "ppm"
+            case "ug_m3": return "µg/m³"
+            default: return nil
+            }
+        case .contact, .lock, .motion, .occupancy, .leak, .smoke:
+            return nil
+        }
+    }
+
     func unitHint(temperatureUnit: TemperatureUnit = .celsius) -> String {
         switch self {
         case .temperature: return temperatureUnit.shortSymbol
@@ -162,15 +182,12 @@ struct ChartSeriesPoint: Identifiable, Hashable, Sendable {
     var label: String
     var timestamp: Date
     var value: Double
-    /// Sample from before the visible window, kept so the line can enter the left edge.
-    var isAnchor: Bool
 
-    init(sensorID: String, label: String, timestamp: Date, value: Double, isAnchor: Bool = false) {
+    init(sensorID: String, label: String, timestamp: Date, value: Double) {
         self.id = "\(sensorID)|\(timestamp.timeIntervalSince1970)"
         self.sensorID = sensorID
         self.label = label
         self.timestamp = timestamp
         self.value = value
-        self.isAnchor = isAnchor
     }
 }

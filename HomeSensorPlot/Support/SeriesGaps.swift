@@ -54,6 +54,46 @@ enum SeriesGaps {
         return Layout(segments: segments, matchWindow: threshold / 2)
     }
 
+    /// Segment of a plotted time in a layout built from the full series.
+    ///
+    /// An exact sample uses its own segment. A time between two samples uses
+    /// that segment only when the line connects them. A hole returns nil, so a
+    /// downsampled point kept on each side cannot be drawn as one line.
+    static func segmentIndex(at timestamp: Date, timestamps: [Date], segments: [Int]) -> Int? {
+        guard !timestamps.isEmpty, timestamps.count == segments.count else { return nil }
+        var low = 0
+        var high = timestamps.count
+        while low < high {
+            let mid = (low + high) / 2
+            if timestamps[mid] < timestamp {
+                low = mid + 1
+            } else {
+                high = mid
+            }
+        }
+        if low < timestamps.count, timestamps[low] == timestamp {
+            return segments[low]
+        }
+        let earlier = low - 1
+        guard earlier >= 0, low < timestamps.count else { return nil }
+        guard segments[earlier] == segments[low] else { return nil }
+        return segments[earlier]
+    }
+
+    /// Indexes that cannot form a line. A segment with one plotted point is a dot,
+    /// including a point left alone after a gap split.
+    static func lonePointIndexes(segmentIDs: [String]) -> Set<Int> {
+        var counts: [String: Int] = [:]
+        for id in segmentIDs {
+            counts[id, default: 0] += 1
+        }
+        var indexes: Set<Int> = []
+        for (index, id) in segmentIDs.enumerated() where counts[id] == 1 {
+            indexes.insert(index)
+        }
+        return indexes
+    }
+
     private static func median(_ values: [TimeInterval]) -> TimeInterval {
         let sorted = values.sorted()
         let mid = sorted.count / 2

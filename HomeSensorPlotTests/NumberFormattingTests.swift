@@ -7,6 +7,39 @@ final class NumberFormattingTests: XCTestCase {
         XCTAssertEqual(NumberFormatting.port(9105), "9105")
         XCTAssertEqual(NumberFormatting.port(12_345), "12345")
     }
+
+    func testMeasurementStopsAtOneDecimal() {
+        XCTAssertEqual(NumberFormatting.measurement(46.04), NumberFormatting.measurement(46))
+        XCTAssertEqual(NumberFormatting.measurement(64), NumberFormatting.measurement(64.0))
+        XCTAssertNotEqual(NumberFormatting.measurement(64), "64")
+        XCTAssertEqual(NumberFormatting.measurement(67.64), NumberFormatting.measurement(67.6))
+        XCTAssertEqual(
+            NumberFormatting.withUnit(NumberFormatting.measurement(67.64), "°"),
+            NumberFormatting.measurement(67.6) + "°"
+        )
+        XCTAssertEqual(NumberFormatting.withUnit("12.3", "lux"), "12.3 lux")
+        XCTAssertEqual(NumberFormatting.withUnit("4.2", "µg/m³"), "4.2 µg/m³")
+    }
+
+    func testLargeMeasurementsUseACompactSuffix() {
+        XCTAssertEqual(
+            NumberFormatting.measurement(5_347.7),
+            NumberFormatting.measurement(5.3477) + "k"
+        )
+        XCTAssertEqual(
+            NumberFormatting.measurement(1_000),
+            NumberFormatting.measurement(1) + "k"
+        )
+        XCTAssertEqual(
+            NumberFormatting.measurement(-2_500),
+            NumberFormatting.measurement(-2.5) + "k"
+        )
+        XCTAssertEqual(
+            NumberFormatting.measurement(1_500_000),
+            NumberFormatting.measurement(1.5) + "M"
+        )
+        XCTAssertFalse(NumberFormatting.measurement(999.9).hasSuffix("k"))
+    }
 }
 
 final class WindowFrameStoreTests: XCTestCase {

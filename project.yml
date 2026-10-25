@@ -27,6 +27,7 @@ targets:
         TARGETED_DEVICE_FAMILY: "2"
         SUPPORTS_MACCATALYST: YES
         SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
+        SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: NO
         DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER: NO
         # Agent-style: Dock/app-switcher stay clear; macOSBridge owns the menu bar item.
         INFOPLIST_KEY_LSUIElement: YES
@@ -45,7 +46,6 @@ targets:
         ENABLE_HARDENED_RUNTIME: YES
         ENABLE_APP_SANDBOX: YES
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         SDKROOT: iphoneos
     info:
       path: HomeSensorPlot/Info.plist
@@ -113,6 +113,7 @@ targets:
         TARGETED_DEVICE_FAMILY: "2"
         SUPPORTS_MACCATALYST: YES
         SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
+        SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: NO
         DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER: NO
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: QR3XWABHT6

@@ -48,6 +48,60 @@ final class ChartInteractionTests: XCTestCase {
         XCTAssertTrue(picks.isEmpty)
     }
 
+    func testHoverInADownsampledHoleDoesNotMatch() {
+        // Stride kept one point on each side of a 6h hole. The drawn pair looks
+        // connected, but the full series still has the hole.
+        let fullMinutes = [0.0, 60, 120, 480, 540]
+        let full = ChartInteraction.HoverSeries(
+            id: "room",
+            samples: fullMinutes.map { reading(minutes: $0, value: 21) },
+            matchWindow: SeriesGaps.layout(timestamps: fullMinutes.map { date(minutes: $0) }).matchWindow
+        )
+        let plottedMinutes = [0.0, 540]
+        let plotted = ChartInteraction.HoverSeries(
+            id: "room",
+            samples: plottedMinutes.map { reading(minutes: $0, value: 21) },
+            matchWindow: SeriesGaps.layout(timestamps: plottedMinutes.map { date(minutes: $0) }).matchWindow
+        )
+        let picks = ChartInteraction.resolvedPicks(
+            plotted: [plotted],
+            full: [full],
+            time: date(minutes: 300),
+            yValue: 21,
+            stateCategory: false
+        )
+        XCTAssertTrue(picks.isEmpty)
+    }
+
+    func testHoverReportsASpikeTheDrawnLineSkipped() {
+        let full = ChartInteraction.HoverSeries(
+            id: "room",
+            samples: [
+                reading(minutes: 0, value: 0),
+                reading(minutes: 1, value: 100),
+                reading(minutes: 2, value: 0),
+            ],
+            matchWindow: 90
+        )
+        let plotted = ChartInteraction.HoverSeries(
+            id: "room",
+            samples: [
+                reading(minutes: 0, value: 0),
+                reading(minutes: 2, value: 0),
+            ],
+            matchWindow: 180
+        )
+        let picks = ChartInteraction.resolvedPicks(
+            plotted: [plotted],
+            full: [full],
+            time: date(minutes: 1),
+            yValue: 0,
+            stateCategory: false
+        )
+        XCTAssertEqual(picks, [ChartInteraction.HoverPick(id: "room", index: 1)])
+        XCTAssertEqual(full.samples[picks[0].index].value, 100)
+    }
+
     func testCursorOnASegmentMatchesThatSample() {
         let timestamps = [0, 60, 120].map { date(minutes: $0) }
         let layout = SeriesGaps.layout(timestamps: timestamps)
@@ -107,6 +161,110 @@ final class ChartInteractionTests: XCTestCase {
         )
     }
 
+    func testWindowStatsFollowTheDrawnLine() throws {
+        let uneven = [
+            reading(minutes: 0, value: 0),
+            reading(minutes: 10, value: 30),
+            reading(minutes: 40, value: 30),
+        ]
+        let stats = try XCTUnwrap(ChartInteraction.windowStats(samples: uneven))
+        XCTAssertEqual(stats.minimum, 0)
+        XCTAssertEqual(stats.maximum, 30)
+        // The long interval at 30 outweighs a plain mean of the three readings (20).
+        XCTAssertEqual(try XCTUnwrap(stats.average), 26.25, accuracy: 0.0001)
+        XCTAssertEqual(
+            ChartInteraction.statsText(category: .temperature, samples: uneven, symbol: "°"),
+            formattedStats(low: 0, high: 30, average: 26.25, symbol: "°")
+        )
+    }
+
+    func testWindowStatsSkipGapsTheLineDoesNotCross() throws {
+        let samples = [
+            reading(minutes: 0, value: 0),
+            reading(minutes: 10, value: 0),
+            reading(minutes: 20, value: 10),
+            reading(minutes: 1000, value: 100),
+        ]
+        let stats = try XCTUnwrap(ChartInteraction.windowStats(samples: samples))
+        XCTAssertEqual(stats.minimum, 0)
+        XCTAssertEqual(stats.maximum, 100)
+        XCTAssertEqual(try XCTUnwrap(stats.average), 2.5, accuracy: 0.0001)
+    }
+
+    func testWindowStatsOmitAverageWhenTimeDoesNotAdvance() throws {
+        let samples = [
+            reading(minutes: 0, value: 1),
+            reading(minutes: 0, value: 9),
+        ]
+        let stats = try XCTUnwrap(ChartInteraction.windowStats(samples: samples))
+        XCTAssertEqual(stats.minimum, 1)
+        XCTAssertEqual(stats.maximum, 9)
+        XCTAssertNil(stats.average)
+        let low = NumberFormatting.measurement(1)
+        let high = NumberFormatting.withUnit(NumberFormatting.measurement(9), "%")
+        XCTAssertEqual(
+            ChartInteraction.statsText(category: .humidity, samples: samples, symbol: "%"),
+            "\(low)–\(high)"
+        )
+    }
+
+    func testWindowStatsNeedTwoSamples() {
+        let lone = [reading(minutes: 0, value: 21)]
+        XCTAssertNil(ChartInteraction.windowStats(samples: lone))
+        XCTAssertNil(ChartInteraction.statsText(category: .humidity, samples: lone))
+        XCTAssertNil(ChartInteraction.statsText(category: .temperature, samples: []))
+    }
+
+    func testStatsTextHidesAFlatRangeAndStateCategories() {
+        let flat = [reading(minutes: 0, value: 5), reading(minutes: 10, value: 5)]
+        XCTAssertEqual(ChartInteraction.windowStats(samples: flat)?.average, 5.0)
+        XCTAssertNil(ChartInteraction.statsText(category: .battery, samples: flat))
+
+        let roundedFlat = [reading(minutes: 0, value: 1.001), reading(minutes: 30, value: 1.004)]
+        XCTAssertNil(ChartInteraction.statsText(category: .light, samples: roundedFlat))
+
+        let states = [reading(minutes: 0, value: 0), reading(minutes: 15, value: 1)]
+        XCTAssertNil(ChartInteraction.statsText(category: .contact, samples: states))
+        XCTAssertNil(ChartInteraction.statsText(category: .motion, samples: states))
+    }
+
+    func testStatsTextKeepsASpreadThatCompactRoundingHides() throws {
+        let samples = [reading(minutes: 0, value: 5_340), reading(minutes: 10, value: 5_349)]
+        XCTAssertEqual(
+            NumberFormatting.measurement(5_340),
+            NumberFormatting.measurement(5_349)
+        )
+        let average = try XCTUnwrap(ChartInteraction.windowStats(samples: samples)?.average)
+        XCTAssertEqual(
+            ChartInteraction.statsText(category: .light, samples: samples, symbol: "lux"),
+            formattedStats(low: 5_340, high: 5_349, average: average, fractionLength: 2, symbol: "lux")
+        )
+    }
+
+    func testWindowSamplesKeepExtremaTheChartDrops() throws {
+        let samples = (0..<11).map { index in
+            SamplePoint(
+                id: Int64(index),
+                sensorID: "room",
+                timestamp: date(minutes: Double(index)),
+                value: index == 1 ? 100 : 0
+            )
+        }
+        let series = ChartSeriesAssembly.sensorSeries(
+            sensorID: "room",
+            label: "Kitchen",
+            windowStart: date(minutes: 0),
+            samples: samples,
+            anchor: nil,
+            maxPoints: 3,
+            value: { $0.value }
+        )
+        XCTAssertFalse(series.plotted.contains { $0.value == 100 })
+        let stats = try XCTUnwrap(ChartInteraction.windowStats(samples: series.window))
+        XCTAssertEqual(stats.minimum, 0)
+        XCTAssertEqual(stats.maximum, 100)
+    }
+
     func testStateWordingIsShared() {
         XCTAssertEqual(ChartInteraction.hoverText(category: .contact, value: 1), "open")
         XCTAssertEqual(
@@ -115,6 +273,8 @@ final class ChartInteractionTests: XCTestCase {
         )
         XCTAssertEqual(ChartInteraction.hoverText(category: .lock, value: 1), "secured")
         XCTAssertEqual(ChartInteraction.hoverText(category: .lock, value: 0), "unsecured")
+        XCTAssertEqual(ChartInteraction.hoverText(category: .lock, value: 2), "jammed")
+        XCTAssertEqual(ChartInteraction.hoverText(category: .lock, value: 3), "unknown")
         XCTAssertEqual(ChartInteraction.hoverText(category: .motion, value: 1), "detected")
         XCTAssertEqual(ChartInteraction.hoverText(category: .leak, value: 0), "clear")
         let display = TemperatureUnit.fahrenheit.display(fromCelsius: 0)
@@ -131,6 +291,87 @@ final class ChartInteractionTests: XCTestCase {
             ChartInteraction.sidebarText(category: .humidity, value: 1, unit: "bool", temperatureUnit: .celsius),
             "on"
         )
+        let humidity = ChartInteraction.sidebarReading(
+            category: .humidity,
+            value: 46,
+            unit: "percent",
+            temperatureUnit: .celsius
+        )
+        XCTAssertEqual(
+            humidity.text,
+            NumberFormatting.withUnit(NumberFormatting.measurement(46), "%")
+        )
+        XCTAssertTrue(humidity.prominent)
+        let fahrenheit = ChartInteraction.sidebarReading(
+            category: .temperature,
+            value: 0,
+            unit: "celsius",
+            temperatureUnit: .fahrenheit
+        )
+        XCTAssertEqual(
+            fahrenheit.text,
+            NumberFormatting.withUnit(
+                NumberFormatting.measurement(TemperatureUnit.fahrenheit.display(fromCelsius: 0)),
+                "°"
+            )
+        )
+        XCTAssertFalse(fahrenheit.text.contains("F"))
+        XCTAssertEqual(
+            ChartInteraction.sidebarReading(
+                category: .light,
+                value: 12.26,
+                unit: "lux",
+                temperatureUnit: .celsius
+            ).text,
+            NumberFormatting.withUnit(NumberFormatting.measurement(12.26), "lux")
+        )
+        XCTAssertEqual(
+            ChartInteraction.sidebarReading(
+                category: .contact,
+                value: 0,
+                unit: "bool",
+                temperatureUnit: .celsius
+            ),
+            ChartInteraction.SidebarReading(text: "closed", prominent: false)
+        )
+    }
+
+    func testFirstTapSolosTheRow() {
+        let all = CategoryChartSelection.State(
+            enabledIDs: ["a", "b"],
+            outdoorEnabled: true,
+            selectsAll: true
+        )
+        XCTAssertEqual(
+            CategoryChartSelection.tap("b", outdoorID: "outdoor", state: all),
+            CategoryChartSelection.State(enabledIDs: ["b"], outdoorEnabled: false, selectsAll: false)
+        )
+        XCTAssertEqual(
+            CategoryChartSelection.tap("outdoor", outdoorID: "outdoor", state: all),
+            CategoryChartSelection.State(enabledIDs: [], outdoorEnabled: true, selectsAll: false)
+        )
+    }
+
+    func testLaterTapsToggleTheRow() {
+        let solo = CategoryChartSelection.State(
+            enabledIDs: ["b"],
+            outdoorEnabled: false,
+            selectsAll: false
+        )
+        let withOutdoor = CategoryChartSelection.tap("outdoor", outdoorID: "outdoor", state: solo)
+        XCTAssertEqual(withOutdoor.enabledIDs, ["b"])
+        XCTAssertTrue(withOutdoor.outdoorEnabled)
+
+        let hiddenOutdoor = CategoryChartSelection.tap("outdoor", outdoorID: "outdoor", state: withOutdoor)
+        XCTAssertFalse(hiddenOutdoor.outdoorEnabled)
+        XCTAssertEqual(hiddenOutdoor.enabledIDs, ["b"])
+
+        let added = CategoryChartSelection.tap("a", outdoorID: "outdoor", state: solo)
+        XCTAssertEqual(added.enabledIDs, ["a", "b"])
+
+        let removed = CategoryChartSelection.tap("b", outdoorID: "outdoor", state: solo)
+        XCTAssertTrue(removed.enabledIDs.isEmpty)
+        XCTAssertFalse(removed.selectsAll)
     }
 
     func testLeadingAnchorIsPlacedOnTheWindowEdge() {
@@ -145,7 +386,6 @@ final class ChartInteractionTests: XCTestCase {
         )
         XCTAssertEqual(points.map(\.timestamp), [date(minutes: 40), date(minutes: 100)])
         XCTAssertEqual(points.map(\.value), [40, 100])
-        XCTAssertFalse(points.contains(where: \.isAnchor))
     }
 
     func testEmptyWindowDropsTheAnchor() {
@@ -188,7 +428,8 @@ final class ChartInteractionTests: XCTestCase {
             timestamp: { $0.timestamp },
             value: { $0.value }
         )
-        XCTAssertEqual(points.map(\.isAnchor), [false, false])
+        XCTAssertEqual(points.map(\.timestamp), [date(minutes: 60), date(minutes: 120)])
+        XCTAssertEqual(points.map(\.value), [11, 12])
     }
 
     func testPaletteRepeatsFromTheStart() {
@@ -217,6 +458,76 @@ final class ChartInteractionTests: XCTestCase {
             0.416,
             accuracy: 0.01
         )
+    }
+
+    func testIndoorPublishKeepsOutdoorInsideTheWindow() {
+        let outdoorID = "outdoor"
+        let published = CategoryChartPublish.keepingOutdoor(
+            indoorPoints: [
+                ChartSeriesPoint(sensorID: "room", label: "Kitchen", timestamp: date(minutes: 10), value: 20),
+            ],
+            indoorSamples: [
+                "room": [ChartInteraction.Sample(timestamp: date(minutes: 10), value: 20)],
+            ],
+            previousPoints: [
+                ChartSeriesPoint(sensorID: outdoorID, label: "Outdoor", timestamp: date(minutes: 40), value: 5),
+                ChartSeriesPoint(sensorID: outdoorID, label: "Outdoor", timestamp: date(minutes: 400), value: 9),
+            ],
+            previousSamples: [
+                outdoorID: [
+                    ChartInteraction.Sample(timestamp: date(minutes: 40), value: 5),
+                    ChartInteraction.Sample(timestamp: date(minutes: 400), value: 9),
+                ],
+            ],
+            outdoorID: outdoorID,
+            windowStart: date(minutes: 0),
+            windowEnd: date(minutes: 100),
+            keepOutdoor: true
+        )
+        XCTAssertEqual(published.points.map(\.sensorID), ["room", outdoorID])
+        XCTAssertEqual(published.points.map(\.value), [20, 5])
+        XCTAssertEqual(published.samples[outdoorID]?.map(\.value), [5])
+        XCTAssertEqual(published.samples["room"]?.map(\.value), [20])
+    }
+
+    func testIndoorPublishDropsOutdoorWhenItIsNotShown() {
+        let published = CategoryChartPublish.keepingOutdoor(
+            indoorPoints: [
+                ChartSeriesPoint(sensorID: "room", label: "Kitchen", timestamp: date(minutes: 10), value: 20),
+            ],
+            indoorSamples: [:],
+            previousPoints: [
+                ChartSeriesPoint(sensorID: "outdoor", label: "Outdoor", timestamp: date(minutes: 10), value: 5),
+            ],
+            previousSamples: [
+                "outdoor": [ChartInteraction.Sample(timestamp: date(minutes: 10), value: 5)],
+            ],
+            outdoorID: "outdoor",
+            windowStart: date(minutes: 0),
+            windowEnd: date(minutes: 100),
+            keepOutdoor: false
+        )
+        XCTAssertEqual(published.points.map(\.sensorID), ["room"])
+        XCTAssertNil(published.samples["outdoor"])
+    }
+
+    private func formattedStats(
+        low: Double,
+        high: Double,
+        average: Double,
+        fractionLength: Int = 1,
+        symbol: String? = nil
+    ) -> String {
+        let lowText = NumberFormatting.measurement(low, fractionLength: fractionLength)
+        let highText = NumberFormatting.withUnit(
+            NumberFormatting.measurement(high, fractionLength: fractionLength),
+            symbol
+        )
+        let averageText = NumberFormatting.withUnit(
+            NumberFormatting.measurement(average, fractionLength: fractionLength),
+            symbol
+        )
+        return "\(lowText)–\(highText) · avg \(averageText)"
     }
 
     private func date(minutes: Double) -> Date {
