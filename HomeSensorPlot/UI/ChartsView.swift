@@ -627,7 +627,7 @@ private struct CategoryDetailView: View {
     private struct PlottedPoint: Identifiable {
         var point: ChartSeriesPoint
         var segmentID: String
-        /// A series with one in-window sample. A line needs two points, so the sample is a dot.
+        /// A segment with one plotted point. A line needs two points, so the sample is a dot.
         var drawsMarker: Bool
         var id: String { point.id }
     }
@@ -674,11 +674,6 @@ private struct CategoryDetailView: View {
             grouped[point.sensorID, default: []].append(point)
         }
 
-        var visibleCount: [String: Int] = [:]
-        for point in enabledPoints {
-            visibleCount[point.sensorID, default: 0] += 1
-        }
-
         var plotted: [PlottedPoint] = []
         plotted.reserveCapacity(enabledPoints.count)
         var buckets: [String: SeriesBucket] = [:]
@@ -701,18 +696,21 @@ private struct CategoryDetailView: View {
                 pickWindow: pickLayout.matchWindow,
                 matchWindow: layout.matchWindow
             )
-            let markLonelySample = visibleCount[sensorID] == 1
-            for (offset, point) in sorted.enumerated() {
+            let segmentIDs = sorted.enumerated().map { offset, point in
                 let segment = SeriesGaps.segmentIndex(
                     at: point.timestamp,
                     timestamps: gapTimestamps,
                     segments: layout.segments
                 )
+                return segment.map { "\(sensorID)#\($0)" } ?? "\(sensorID)#off-\(offset)"
+            }
+            let dots = SeriesGaps.lonePointIndexes(segmentIDs: segmentIDs)
+            for (offset, point) in sorted.enumerated() {
                 plotted.append(
                     PlottedPoint(
                         point: point,
-                        segmentID: segment.map { "\(sensorID)#\($0)" } ?? "\(sensorID)#off-\(offset)",
-                        drawsMarker: markLonelySample
+                        segmentID: segmentIDs[offset],
+                        drawsMarker: dots.contains(offset)
                     )
                 )
             }

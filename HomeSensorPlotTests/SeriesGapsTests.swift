@@ -51,6 +51,13 @@ final class SeriesGapsTests: XCTestCase {
         XCTAssertEqual(SeriesGaps.segmentIndex(at: connected, timestamps: full, segments: layout.segments), 0)
     }
 
+    func testLonePointInASplitSegmentNeedsADot() {
+        XCTAssertEqual(SeriesGaps.lonePointIndexes(segmentIDs: ["room#0", "room#0", "room#1"]), [2])
+        XCTAssertEqual(SeriesGaps.lonePointIndexes(segmentIDs: ["room#0"]), [0])
+        XCTAssertTrue(SeriesGaps.lonePointIndexes(segmentIDs: ["room#0", "room#0"]).isEmpty)
+        XCTAssertEqual(SeriesGaps.lonePointIndexes(segmentIDs: ["room#off-0", "room#off-1"]), [0, 1])
+    }
+
     func testSinglePointUsesFallbackWindow() {
         let layout = SeriesGaps.layout(timestamps: dates(minutes: [10]))
         XCTAssertEqual(layout.segments, [0])

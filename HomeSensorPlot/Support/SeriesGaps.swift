@@ -80,6 +80,20 @@ enum SeriesGaps {
         return segments[earlier]
     }
 
+    /// Indexes that cannot form a line. A segment with one plotted point is a dot,
+    /// including a point left alone after a gap split.
+    static func lonePointIndexes(segmentIDs: [String]) -> Set<Int> {
+        var counts: [String: Int] = [:]
+        for id in segmentIDs {
+            counts[id, default: 0] += 1
+        }
+        var indexes: Set<Int> = []
+        for (index, id) in segmentIDs.enumerated() where counts[id] == 1 {
+            indexes.insert(index)
+        }
+        return indexes
+    }
+
     private static func median(_ values: [TimeInterval]) -> TimeInterval {
         let sorted = values.sorted()
         let mid = sorted.count / 2
