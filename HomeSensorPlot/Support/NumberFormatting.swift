@@ -2,11 +2,25 @@ import Foundation
 
 enum NumberFormatting {
     /// Measurement values for UI. Always the same number of decimals, so 64 and 64.2 line up.
+    /// Thousands and millions compact, so 5347.7 reads as 5.3k.
     static func measurement(_ value: Double, fractionLength: Int = 1) -> String {
-        value.formatted(
+        let (scaled, suffix) = compactScale(value)
+        let digits = scaled.formatted(
             .number
                 .precision(.fractionLength(fractionLength))
         )
+        return digits + suffix
+    }
+
+    private static func compactScale(_ value: Double) -> (Double, String) {
+        let magnitude = abs(value)
+        if magnitude >= 1_000_000 {
+            return (value / 1_000_000, "M")
+        }
+        if magnitude >= 1_000 {
+            return (value / 1_000, "k")
+        }
+        return (value, "")
     }
 
     /// `67.6°` and `46%` sit against the number. `lux` and `ppm` take a space.

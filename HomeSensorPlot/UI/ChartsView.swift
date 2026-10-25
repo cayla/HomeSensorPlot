@@ -264,7 +264,7 @@ private struct CategoryDetailView: View {
             Button {
                 appState.closeCategory()
             } label: {
-                Image(systemName: "chevron.up")
+                Image(systemName: "square.grid.2x2")
                     .font(.body.weight(.semibold))
                     .frame(width: 28, height: 28)
                     .contentShape(Rectangle())
@@ -538,7 +538,7 @@ private struct CategoryDetailView: View {
     private var yAxisMarks: some AxisContent {
         switch ChartAxisKind.of(category) {
         case .percent:
-            AxisMarks(values: [0, 25, 50, 75, 100]) { value in
+            AxisMarks(position: .leading, values: [0, 25, 50, 75, 100]) { value in
                 AxisGridLine()
                 AxisTick()
                 AxisValueLabel {
@@ -548,7 +548,7 @@ private struct CategoryDetailView: View {
                 }
             }
         case .state:
-            AxisMarks(values: [0, 1]) { value in
+            AxisMarks(position: .leading, values: [0, 1]) { value in
                 AxisGridLine()
                 AxisTick()
                 AxisValueLabel {
@@ -558,7 +558,7 @@ private struct CategoryDetailView: View {
                 }
             }
         case .continuous:
-            AxisMarks(values: .automatic(desiredCount: 5)) { value in
+            AxisMarks(position: .leading, values: .automatic(desiredCount: 5)) { value in
                 AxisGridLine()
                 AxisTick()
                 AxisValueLabel {

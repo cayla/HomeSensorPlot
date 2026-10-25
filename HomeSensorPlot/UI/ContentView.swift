@@ -21,10 +21,7 @@ struct ContentView: View {
             }
             .padding(.horizontal, 16)
             .padding(.top, 12)
-
-            MenuBarView()
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
+            .padding(.bottom, 8)
 
             // Buttons (not a Picker) so re-tapping the active section still resets to its root.
             HStack(spacing: 0) {
