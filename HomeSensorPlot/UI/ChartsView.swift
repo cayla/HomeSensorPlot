@@ -187,6 +187,7 @@ private struct CategoryDetailView: View {
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    .help("Click a sensor to show or hide it. The first click keeps only that sensor.")
                     Button {
                         appState.setAllCategorySensors(enabled: false)
                     } label: {
@@ -196,6 +197,7 @@ private struct CategoryDetailView: View {
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    .help("Click a sensor to show or hide it. The first click keeps only that sensor.")
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -398,7 +400,7 @@ private struct CategoryDetailView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                     if selectedTime == nil {
-                        Text("Hover a line to inspect")
+                        Text("Hover mouse over lines to inspect")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                             .padding(10)
