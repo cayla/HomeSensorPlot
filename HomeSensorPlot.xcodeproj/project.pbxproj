@@ -101,7 +101,7 @@
 		304E8D892739B82D3452D45F /* NumberFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NumberFormatting.swift; sourceTree = "<group>"; };
 		391DEBC60D4C81DB4747DEA8 /* FooterNotice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FooterNotice.swift; sourceTree = "<group>"; };
 		39391BF90F5D4D3D63F0C58B /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
-		41012E5B1FF58DE7E653AFA8 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		41012E5B1FF58DE7E653AFA8 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		43A4511565F566E5FFC7D48C /* SensorCharacteristicClassifierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SensorCharacteristicClassifierTests.swift; sourceTree = "<group>"; };
 		465BB5F1F6FA295F2B7CBDC1 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		48FECE09E743B308E1096E7D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -119,7 +119,7 @@
 		88E50A333C93088DC2C0BABE /* MacOSPluginLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacOSPluginLoader.swift; sourceTree = "<group>"; };
 		8AE551141290ECA250FBA851 /* SampleAcceptanceDebouncer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleAcceptanceDebouncer.swift; sourceTree = "<group>"; };
 		939B546DAAE8AACD22D66FAC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
-		9F31156F2434438F0409C9D0 /* HomeSensorPlot.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = HomeSensorPlot.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		9F31156F2434438F0409C9D0 /* HomeSensorPlot.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HomeSensorPlot.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9F5BAF0C3A2D2FD9E6326567 /* SampleAcceptanceDebouncerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleAcceptanceDebouncerTests.swift; sourceTree = "<group>"; };
 		A1A505072F3ECE82B54CA099 /* SensorCategoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SensorCategoryTests.swift; sourceTree = "<group>"; };
 		A7116E34A12D69694A7685B4 /* SeriesDownsample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeriesDownsample.swift; sourceTree = "<group>"; };
@@ -568,7 +568,6 @@
 				INFOPLIST_KEY_NSHomeKitUsageDescription = "HomeSensorPlot reads HomeKit sensor data to record, chart, and export environmental metrics.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © Cayla";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "HomeSensorPlot uses your location to fetch local outdoor temperature for the Temperature chart.";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -582,7 +581,7 @@
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = YES;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				TARGETED_DEVICE_FAMILY = 2;
 			};
 			name = Release;
@@ -605,7 +604,7 @@
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = YES;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				TARGETED_DEVICE_FAMILY = 2;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/HomeSensorPlot.app/HomeSensorPlot";
 			};
@@ -654,7 +653,6 @@
 				INFOPLIST_KEY_NSHomeKitUsageDescription = "HomeSensorPlot reads HomeKit sensor data to record, chart, and export environmental metrics.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © Cayla";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "HomeSensorPlot uses your location to fetch local outdoor temperature for the Temperature chart.";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -668,7 +666,7 @@
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = YES;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				TARGETED_DEVICE_FAMILY = 2;
 			};
 			name = Debug;
@@ -831,7 +829,7 @@
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = YES;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				TARGETED_DEVICE_FAMILY = 2;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/HomeSensorPlot.app/HomeSensorPlot";
 			};
