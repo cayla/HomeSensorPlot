@@ -620,20 +620,15 @@ private struct CategoryDetailView: View {
     }
 
     /// Window summary for every loaded series, including rows toggled off the chart.
-    /// Hiding the line must not drop the caption — that shifts the list.
+    /// Built from the full window, not the downsampled line, so a spike the chart
+    /// skips still appears here. Hiding the line must not drop the caption.
     private var windowStatsBySensorID: [String: String] {
-        var grouped: [String: [ChartSeriesPoint]] = [:]
-        for point in appState.categoryChartPoints {
-            grouped[point.sensorID, default: []].append(point)
-        }
         var texts: [String: String] = [:]
-        for (sensorID, points) in grouped {
-            let samples = points
-                .sorted { $0.timestamp < $1.timestamp }
-                .map { ChartInteraction.Sample(timestamp: $0.timestamp, value: $0.value) }
+        for (sensorID, samples) in appState.categoryWindowSamples {
+            let ordered = samples.sorted { $0.timestamp < $1.timestamp }
             if let text = ChartInteraction.statsText(
                 category: category,
-                samples: samples,
+                samples: ordered,
                 symbol: measurementSymbol(for: sensorID)
             ) {
                 texts[sensorID] = text

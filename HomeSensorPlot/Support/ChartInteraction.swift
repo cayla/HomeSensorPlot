@@ -50,7 +50,8 @@ enum ChartInteraction {
     struct WindowStats: Equatable {
         var minimum: Double
         var maximum: Double
-        var average: Double
+        /// Nil when no drawn interval has duration, so a mean across gaps is not invented.
+        var average: Double?
     }
 
     static func paddedDomain(_ values: [Double]) -> ClosedRange<Double> {
@@ -127,7 +128,8 @@ enum ChartInteraction {
     ///
     /// The average follows the drawn line: trapezoids between samples, and no
     /// contribution across a gap where the line breaks. A burst of readings
-    /// only counts for the time it spans. `samples` must be sorted by time.
+    /// only counts for the time it spans. When no interval has duration, there
+    /// is no average. `samples` must be sorted by time.
     static func windowStats(samples: [Sample]) -> WindowStats? {
         guard samples.count >= 2 else { return nil }
 
@@ -149,17 +151,13 @@ enum ChartInteraction {
             duration += dt
         }
 
-        let average: Double
-        if duration > 0 {
-            average = weighted / duration
-        } else {
-            average = samples.reduce(0) { $0 + $1.value } / Double(samples.count)
-        }
+        let average = duration > 0 ? weighted / duration : nil
         return WindowStats(minimum: minimum, maximum: maximum, average: average)
     }
 
     /// `18.2–23.4° · avg 20.1°` for the window. Nil for state categories,
-    /// a single sample, or a range that rounds to one number.
+    /// a single sample, or a range that still matches at two decimals.
+    /// One extra decimal is used when compact `k`/`M` rounding would hide a spread.
     static func statsText(
         category: SensorCategory,
         samples: [Sample],
@@ -167,11 +165,26 @@ enum ChartInteraction {
     ) -> String? {
         guard ChartAxisKind.of(category) != .state else { return nil }
         guard let stats = windowStats(samples: samples) else { return nil }
-        let low = NumberFormatting.measurement(stats.minimum)
-        let high = NumberFormatting.measurement(stats.maximum)
-        guard low != high else { return nil }
-        let average = NumberFormatting.measurement(stats.average)
-        return "\(low)–\(NumberFormatting.withUnit(high, symbol)) · avg \(NumberFormatting.withUnit(average, symbol))"
+        guard let fractionLength = rangeFractionLength(minimum: stats.minimum, maximum: stats.maximum) else {
+            return nil
+        }
+        let low = NumberFormatting.measurement(stats.minimum, fractionLength: fractionLength)
+        let high = NumberFormatting.measurement(stats.maximum, fractionLength: fractionLength)
+        let range = "\(low)–\(NumberFormatting.withUnit(high, symbol))"
+        guard let average = stats.average else { return range }
+        let averageText = NumberFormatting.measurement(average, fractionLength: fractionLength)
+        return "\(range) · avg \(NumberFormatting.withUnit(averageText, symbol))"
+    }
+
+    /// One decimal, unless that draws the same number for both ends.
+    /// Two decimals still matching means the spread is display noise.
+    private static func rangeFractionLength(minimum: Double, maximum: Double) -> Int? {
+        let coarseLow = NumberFormatting.measurement(minimum)
+        let coarseHigh = NumberFormatting.measurement(maximum)
+        if coarseLow != coarseHigh { return 1 }
+        let fineLow = NumberFormatting.measurement(minimum, fractionLength: 2)
+        let fineHigh = NumberFormatting.measurement(maximum, fractionLength: 2)
+        return fineLow == fineHigh ? nil : 2
     }
 
     static func hoverText(category: SensorCategory, value: Double) -> String {
@@ -330,6 +343,41 @@ enum ChartSeriesAssembly {
                 isAnchor: false
             )
         }
+    }
+
+    /// Chart points stay capped. The window samples do not, so a spike between
+    /// stride picks still counts in the sidebar range.
+    static func sensorSeries(
+        sensorID: String,
+        label: String,
+        windowStart: Date,
+        samples: [SamplePoint],
+        anchor: SamplePoint?,
+        maxPoints: Int,
+        value: (SamplePoint) -> Double
+    ) -> (plotted: [ChartSeriesPoint], window: [ChartInteraction.Sample]) {
+        let windowPoints = seriesPoints(
+            sensorID: sensorID,
+            label: label,
+            windowStart: windowStart,
+            inWindow: samples,
+            anchor: anchor,
+            timestamp: { $0.timestamp },
+            value: value
+        )
+        let plotted = seriesPoints(
+            sensorID: sensorID,
+            label: label,
+            windowStart: windowStart,
+            inWindow: SeriesDownsample.stride(samples, maxPoints: maxPoints),
+            anchor: anchor,
+            timestamp: { $0.timestamp },
+            value: value
+        )
+        let window = windowPoints.map {
+            ChartInteraction.Sample(timestamp: $0.timestamp, value: $0.value)
+        }
+        return (plotted, window)
     }
 
     /// Same rule as the drawn line: a gap wider than the series' usual spacing stays broken.

@@ -117,7 +117,7 @@ final class ChartInteractionTests: XCTestCase {
         XCTAssertEqual(stats.minimum, 0)
         XCTAssertEqual(stats.maximum, 30)
         // The long interval at 30 outweighs a plain mean of the three readings (20).
-        XCTAssertEqual(stats.average, 26.25, accuracy: 0.0001)
+        XCTAssertEqual(try XCTUnwrap(stats.average), 26.25, accuracy: 0.0001)
         XCTAssertEqual(
             ChartInteraction.statsText(category: .temperature, samples: uneven, symbol: "°"),
             formattedStats(low: 0, high: 30, average: 26.25, symbol: "°")
@@ -134,7 +134,24 @@ final class ChartInteractionTests: XCTestCase {
         let stats = try XCTUnwrap(ChartInteraction.windowStats(samples: samples))
         XCTAssertEqual(stats.minimum, 0)
         XCTAssertEqual(stats.maximum, 100)
-        XCTAssertEqual(stats.average, 2.5, accuracy: 0.0001)
+        XCTAssertEqual(try XCTUnwrap(stats.average), 2.5, accuracy: 0.0001)
+    }
+
+    func testWindowStatsOmitAverageWhenTimeDoesNotAdvance() throws {
+        let samples = [
+            reading(minutes: 0, value: 1),
+            reading(minutes: 0, value: 9),
+        ]
+        let stats = try XCTUnwrap(ChartInteraction.windowStats(samples: samples))
+        XCTAssertEqual(stats.minimum, 1)
+        XCTAssertEqual(stats.maximum, 9)
+        XCTAssertNil(stats.average)
+        let low = NumberFormatting.measurement(1)
+        let high = NumberFormatting.withUnit(NumberFormatting.measurement(9), "%")
+        XCTAssertEqual(
+            ChartInteraction.statsText(category: .humidity, samples: samples, symbol: "%"),
+            "\(low)–\(high)"
+        )
     }
 
     func testWindowStatsNeedTwoSamples() {
@@ -146,7 +163,7 @@ final class ChartInteractionTests: XCTestCase {
 
     func testStatsTextHidesAFlatRangeAndStateCategories() {
         let flat = [reading(minutes: 0, value: 5), reading(minutes: 10, value: 5)]
-        XCTAssertEqual(ChartInteraction.windowStats(samples: flat)?.average, 5)
+        XCTAssertEqual(ChartInteraction.windowStats(samples: flat)?.average, 5.0)
         XCTAssertNil(ChartInteraction.statsText(category: .battery, samples: flat))
 
         let roundedFlat = [reading(minutes: 0, value: 1.001), reading(minutes: 30, value: 1.004)]
@@ -155,6 +172,43 @@ final class ChartInteractionTests: XCTestCase {
         let states = [reading(minutes: 0, value: 0), reading(minutes: 15, value: 1)]
         XCTAssertNil(ChartInteraction.statsText(category: .contact, samples: states))
         XCTAssertNil(ChartInteraction.statsText(category: .motion, samples: states))
+    }
+
+    func testStatsTextKeepsASpreadThatCompactRoundingHides() throws {
+        let samples = [reading(minutes: 0, value: 5_340), reading(minutes: 10, value: 5_349)]
+        XCTAssertEqual(
+            NumberFormatting.measurement(5_340),
+            NumberFormatting.measurement(5_349)
+        )
+        let average = try XCTUnwrap(ChartInteraction.windowStats(samples: samples)?.average)
+        XCTAssertEqual(
+            ChartInteraction.statsText(category: .light, samples: samples, symbol: "lux"),
+            formattedStats(low: 5_340, high: 5_349, average: average, fractionLength: 2, symbol: "lux")
+        )
+    }
+
+    func testWindowSamplesKeepExtremaTheChartDrops() throws {
+        let samples = (0..<11).map { index in
+            SamplePoint(
+                id: Int64(index),
+                sensorID: "room",
+                timestamp: date(minutes: Double(index)),
+                value: index == 1 ? 100 : 0
+            )
+        }
+        let series = ChartSeriesAssembly.sensorSeries(
+            sensorID: "room",
+            label: "Kitchen",
+            windowStart: date(minutes: 0),
+            samples: samples,
+            anchor: nil,
+            maxPoints: 3,
+            value: { $0.value }
+        )
+        XCTAssertFalse(series.plotted.contains { $0.value == 100 })
+        let stats = try XCTUnwrap(ChartInteraction.windowStats(samples: series.window))
+        XCTAssertEqual(stats.minimum, 0)
+        XCTAssertEqual(stats.maximum, 100)
     }
 
     func testStateWordingIsShared() {
@@ -354,11 +408,18 @@ final class ChartInteractionTests: XCTestCase {
         low: Double,
         high: Double,
         average: Double,
+        fractionLength: Int = 1,
         symbol: String? = nil
     ) -> String {
-        let lowText = NumberFormatting.measurement(low)
-        let highText = NumberFormatting.withUnit(NumberFormatting.measurement(high), symbol)
-        let averageText = NumberFormatting.withUnit(NumberFormatting.measurement(average), symbol)
+        let lowText = NumberFormatting.measurement(low, fractionLength: fractionLength)
+        let highText = NumberFormatting.withUnit(
+            NumberFormatting.measurement(high, fractionLength: fractionLength),
+            symbol
+        )
+        let averageText = NumberFormatting.withUnit(
+            NumberFormatting.measurement(average, fractionLength: fractionLength),
+            symbol
+        )
         return "\(lowText)–\(highText) · avg \(averageText)"
     }
 
