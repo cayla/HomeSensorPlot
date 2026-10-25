@@ -158,16 +158,20 @@ enum ChartInteraction {
         return WindowStats(minimum: minimum, maximum: maximum, average: average)
     }
 
-    /// `18.2–23.4 · avg 20.1` for the visible series. Nil for state categories,
+    /// `18.2–23.4° · avg 20.1°` for the window. Nil for state categories,
     /// a single sample, or a range that rounds to one number.
-    static func statsText(category: SensorCategory, samples: [Sample]) -> String? {
+    static func statsText(
+        category: SensorCategory,
+        samples: [Sample],
+        symbol: String? = nil
+    ) -> String? {
         guard ChartAxisKind.of(category) != .state else { return nil }
         guard let stats = windowStats(samples: samples) else { return nil }
         let low = NumberFormatting.measurement(stats.minimum)
         let high = NumberFormatting.measurement(stats.maximum)
         guard low != high else { return nil }
         let average = NumberFormatting.measurement(stats.average)
-        return "\(low)–\(high) · avg \(average)"
+        return "\(low)–\(NumberFormatting.withUnit(high, symbol)) · avg \(NumberFormatting.withUnit(average, symbol))"
     }
 
     static func hoverText(category: SensorCategory, value: Double) -> String {
@@ -177,7 +181,42 @@ enum ChartInteraction {
         return NumberFormatting.measurement(value)
     }
 
+    struct SidebarReading: Equatable {
+        var text: String
+        /// A measurement sits large on the trailing edge. State words stay smaller.
+        var prominent: Bool
+    }
+
     /// Sidebar values are still in storage units. Hover text is already converted.
+    static func sidebarReading(
+        category: SensorCategory,
+        value: Double,
+        unit: String,
+        temperatureUnit: TemperatureUnit
+    ) -> SidebarReading {
+        if stateText(category: category, value: value) != nil || unit == "bool" {
+            return SidebarReading(
+                text: sidebarText(
+                    category: category,
+                    value: value,
+                    unit: unit,
+                    temperatureUnit: temperatureUnit
+                ),
+                prominent: false
+            )
+        }
+        let number: String
+        if category == .temperature {
+            number = NumberFormatting.measurement(temperatureUnit.display(fromCelsius: value))
+        } else {
+            number = NumberFormatting.measurement(value)
+        }
+        return SidebarReading(
+            text: NumberFormatting.withUnit(number, category.measurementSymbol(unit: unit)),
+            prominent: true
+        )
+    }
+
     static func sidebarText(
         category: SensorCategory,
         value: Double,
@@ -212,6 +251,36 @@ enum ChartInteraction {
         default:
             return nil
         }
+    }
+}
+
+/// Which sidebar rows are drawn.
+///
+/// While All is in effect, the first tap keeps that row and clears the rest.
+/// Every later tap toggles the row that was hit.
+enum CategoryChartSelection {
+    struct State: Equatable {
+        var enabledIDs: Set<String>
+        var outdoorEnabled: Bool
+        var selectsAll: Bool
+    }
+
+    static func tap(_ id: String, outdoorID: String, state: State) -> State {
+        if state.selectsAll {
+            if id == outdoorID {
+                return State(enabledIDs: [], outdoorEnabled: true, selectsAll: false)
+            }
+            return State(enabledIDs: [id], outdoorEnabled: false, selectsAll: false)
+        }
+        var next = state
+        if id == outdoorID {
+            next.outdoorEnabled.toggle()
+        } else if next.enabledIDs.contains(id) {
+            next.enabledIDs.remove(id)
+        } else {
+            next.enabledIDs.insert(id)
+        }
+        return next
     }
 }
 

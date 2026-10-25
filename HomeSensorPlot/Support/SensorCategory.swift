@@ -62,6 +62,26 @@ enum SensorCategory: String, CaseIterable, Identifiable, Hashable, Sendable {
         }
     }
 
+    /// Sidebar suffix. Temperature is `°` alone — the page title already shows °C or °F.
+    func measurementSymbol(unit: String) -> String? {
+        switch self {
+        case .temperature:
+            return "°"
+        case .humidity, .battery, .filterLife:
+            return "%"
+        case .light:
+            return "lux"
+        case .air:
+            switch unit {
+            case "ppm": return "ppm"
+            case "ug_m3": return "µg/m³"
+            default: return nil
+            }
+        case .contact, .lock, .motion, .occupancy, .leak, .smoke:
+            return nil
+        }
+    }
+
     func unitHint(temperatureUnit: TemperatureUnit = .celsius) -> String {
         switch self {
         case .temperature: return temperatureUnit.shortSymbol

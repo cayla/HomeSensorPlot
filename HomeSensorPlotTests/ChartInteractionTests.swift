@@ -119,8 +119,8 @@ final class ChartInteractionTests: XCTestCase {
         // The long interval at 30 outweighs a plain mean of the three readings (20).
         XCTAssertEqual(stats.average, 26.25, accuracy: 0.0001)
         XCTAssertEqual(
-            ChartInteraction.statsText(category: .temperature, samples: uneven),
-            formattedStats(low: 0, high: 30, average: 26.25)
+            ChartInteraction.statsText(category: .temperature, samples: uneven, symbol: "°"),
+            formattedStats(low: 0, high: 30, average: 26.25, symbol: "°")
         )
     }
 
@@ -181,6 +181,87 @@ final class ChartInteractionTests: XCTestCase {
             ChartInteraction.sidebarText(category: .humidity, value: 1, unit: "bool", temperatureUnit: .celsius),
             "on"
         )
+        let humidity = ChartInteraction.sidebarReading(
+            category: .humidity,
+            value: 46,
+            unit: "percent",
+            temperatureUnit: .celsius
+        )
+        XCTAssertEqual(
+            humidity.text,
+            NumberFormatting.withUnit(NumberFormatting.measurement(46), "%")
+        )
+        XCTAssertTrue(humidity.prominent)
+        let fahrenheit = ChartInteraction.sidebarReading(
+            category: .temperature,
+            value: 0,
+            unit: "celsius",
+            temperatureUnit: .fahrenheit
+        )
+        XCTAssertEqual(
+            fahrenheit.text,
+            NumberFormatting.withUnit(
+                NumberFormatting.measurement(TemperatureUnit.fahrenheit.display(fromCelsius: 0)),
+                "°"
+            )
+        )
+        XCTAssertFalse(fahrenheit.text.contains("F"))
+        XCTAssertEqual(
+            ChartInteraction.sidebarReading(
+                category: .light,
+                value: 12.26,
+                unit: "lux",
+                temperatureUnit: .celsius
+            ).text,
+            NumberFormatting.withUnit(NumberFormatting.measurement(12.26), "lux")
+        )
+        XCTAssertEqual(
+            ChartInteraction.sidebarReading(
+                category: .contact,
+                value: 0,
+                unit: "bool",
+                temperatureUnit: .celsius
+            ),
+            ChartInteraction.SidebarReading(text: "closed", prominent: false)
+        )
+    }
+
+    func testFirstTapSolosTheRow() {
+        let all = CategoryChartSelection.State(
+            enabledIDs: ["a", "b"],
+            outdoorEnabled: true,
+            selectsAll: true
+        )
+        XCTAssertEqual(
+            CategoryChartSelection.tap("b", outdoorID: "outdoor", state: all),
+            CategoryChartSelection.State(enabledIDs: ["b"], outdoorEnabled: false, selectsAll: false)
+        )
+        XCTAssertEqual(
+            CategoryChartSelection.tap("outdoor", outdoorID: "outdoor", state: all),
+            CategoryChartSelection.State(enabledIDs: [], outdoorEnabled: true, selectsAll: false)
+        )
+    }
+
+    func testLaterTapsToggleTheRow() {
+        let solo = CategoryChartSelection.State(
+            enabledIDs: ["b"],
+            outdoorEnabled: false,
+            selectsAll: false
+        )
+        let withOutdoor = CategoryChartSelection.tap("outdoor", outdoorID: "outdoor", state: solo)
+        XCTAssertEqual(withOutdoor.enabledIDs, ["b"])
+        XCTAssertTrue(withOutdoor.outdoorEnabled)
+
+        let hiddenOutdoor = CategoryChartSelection.tap("outdoor", outdoorID: "outdoor", state: withOutdoor)
+        XCTAssertFalse(hiddenOutdoor.outdoorEnabled)
+        XCTAssertEqual(hiddenOutdoor.enabledIDs, ["b"])
+
+        let added = CategoryChartSelection.tap("a", outdoorID: "outdoor", state: solo)
+        XCTAssertEqual(added.enabledIDs, ["a", "b"])
+
+        let removed = CategoryChartSelection.tap("b", outdoorID: "outdoor", state: solo)
+        XCTAssertTrue(removed.enabledIDs.isEmpty)
+        XCTAssertFalse(removed.selectsAll)
     }
 
     func testLeadingAnchorIsPlacedOnTheWindowEdge() {
@@ -269,10 +350,15 @@ final class ChartInteractionTests: XCTestCase {
         )
     }
 
-    private func formattedStats(low: Double, high: Double, average: Double) -> String {
+    private func formattedStats(
+        low: Double,
+        high: Double,
+        average: Double,
+        symbol: String? = nil
+    ) -> String {
         let lowText = NumberFormatting.measurement(low)
-        let highText = NumberFormatting.measurement(high)
-        let averageText = NumberFormatting.measurement(average)
+        let highText = NumberFormatting.withUnit(NumberFormatting.measurement(high), symbol)
+        let averageText = NumberFormatting.withUnit(NumberFormatting.measurement(average), symbol)
         return "\(lowText)–\(highText) · avg \(averageText)"
     }
 

@@ -252,12 +252,24 @@ final class AppState: ObservableObject {
         closeCategory()
     }
 
-    func setCategorySensor(_ id: String, enabled: Bool) {
-        categorySelectAllMode = false
-        if enabled {
-            categoryEnabledSensorIDs.insert(id)
-        } else {
-            categoryEnabledSensorIDs.remove(id)
+    func tapCategoryChartRow(_ id: String) {
+        let wasOutdoor = outdoorChartEnabled
+        let next = CategoryChartSelection.tap(
+            id,
+            outdoorID: Self.outdoorWeatherSeriesID,
+            state: CategoryChartSelection.State(
+                enabledIDs: categoryEnabledSensorIDs,
+                outdoorEnabled: outdoorChartEnabled,
+                selectsAll: categorySelectAllMode
+            )
+        )
+        categoryEnabledSensorIDs = next.enabledIDs
+        outdoorChartEnabled = next.outdoorEnabled
+        categorySelectAllMode = next.selectsAll
+        // A failed outdoor fetch can be retried by showing the line again.
+        // Hiding it must not drop the samples — the sidebar still shows them.
+        if !wasOutdoor, next.outdoorEnabled {
+            Task { await reloadCategoryChart() }
         }
     }
 
@@ -312,7 +324,9 @@ final class AppState: ObservableObject {
             let indoorOnly = points.filter { $0.sensorID != Self.outdoorWeatherSeriesID }
             categoryChartPoints = indoorOnly
 
-            if category == .temperature, settings.showOutdoorWeather, outdoorChartEnabled {
+            // Load outdoor even when the line is hidden. The chart filters it;
+            // the sidebar still shows the current reading and the window.
+            if category == .temperature, settings.showOutdoorWeather {
                 weather.configure(allowIPGeolocationFallback: settings.allowIPGeolocationFallback)
                 await loadOutdoorWeatherOverlay(
                     window: window,
