@@ -182,15 +182,12 @@ struct ChartSeriesPoint: Identifiable, Hashable, Sendable {
     var label: String
     var timestamp: Date
     var value: Double
-    /// Sample from before the visible window, kept so the line can enter the left edge.
-    var isAnchor: Bool
 
-    init(sensorID: String, label: String, timestamp: Date, value: Double, isAnchor: Bool = false) {
+    init(sensorID: String, label: String, timestamp: Date, value: Double) {
         self.id = "\(sensorID)|\(timestamp.timeIntervalSince1970)"
         self.sensorID = sensorID
         self.label = label
         self.timestamp = timestamp
         self.value = value
-        self.isAnchor = isAnchor
     }
 }

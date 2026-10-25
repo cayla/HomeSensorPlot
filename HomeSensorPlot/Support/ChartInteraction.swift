@@ -119,6 +119,27 @@ enum ChartInteraction {
         }
     }
 
+    /// Series under the cursor come from the drawn points. The value is the
+    /// full-resolution sample at that time, and a cursor in a real hole is dropped.
+    static func resolvedPicks(
+        plotted: [HoverSeries],
+        full: [HoverSeries],
+        time: Date,
+        yValue: Double,
+        stateCategory: Bool
+    ) -> [HoverPick] {
+        let hits = picks(series: plotted, time: time, yValue: yValue, stateCategory: stateCategory)
+        let fullByID = Dictionary(uniqueKeysWithValues: full.map { ($0.id, $0) })
+        return hits.compactMap { hit in
+            guard let series = fullByID[hit.id],
+                  let index = nearestIndex(in: series.samples, to: time)
+            else { return nil }
+            let sample = series.samples[index]
+            guard abs(sample.timestamp.timeIntervalSince(time)) <= series.matchWindow else { return nil }
+            return HoverPick(id: hit.id, index: index)
+        }
+    }
+
     static func yThreshold(_ y: Double, stateCategory: Bool) -> Double {
         if stateCategory { return 0.35 }
         return max(abs(y) * 0.04, 0.75)
@@ -256,9 +277,14 @@ enum ChartInteraction {
         case .contact:
             return value >= 0.5 ? "open" : "closed"
         case .lock:
-            if value >= 0.5, value < 1.5 { return "secured" }
-            if value < 0.5 { return "unsecured" }
-            return nil
+            // HomeKit: 0 unsecured, 1 secured, 2 jammed, 3 unknown.
+            switch value {
+            case ..<0.5: return "unsecured"
+            case ..<1.5: return "secured"
+            case ..<2.5: return "jammed"
+            case ..<3.5: return "unknown"
+            default: return nil
+            }
         case .motion, .occupancy, .leak, .smoke:
             return value >= 0.5 ? "detected" : "clear"
         default:
@@ -339,8 +365,7 @@ enum ChartSeriesAssembly {
                 sensorID: sensorID,
                 label: label,
                 timestamp: time,
-                value: sampleValue,
-                isAnchor: false
+                value: sampleValue
             )
         }
     }

@@ -483,13 +483,18 @@ private struct CategoryDetailView: View {
 
         selectedTime = time
 
-        let picks = ChartInteraction.picks(
-            series: buckets.map { entry in
+        let picks = ChartInteraction.resolvedPicks(
+            plotted: buckets.map { entry in
                 ChartInteraction.HoverSeries(
                     id: entry.key,
-                    samples: entry.value.points.map {
-                        ChartInteraction.Sample(timestamp: $0.timestamp, value: $0.value)
-                    },
+                    samples: entry.value.plotted,
+                    matchWindow: entry.value.pickWindow
+                )
+            },
+            full: buckets.map { entry in
+                ChartInteraction.HoverSeries(
+                    id: entry.key,
+                    samples: entry.value.samples,
                     matchWindow: entry.value.matchWindow
                 )
             },
@@ -504,12 +509,13 @@ private struct CategoryDetailView: View {
         }
 
         hoverRows = picks.compactMap { pick in
-            guard let point = buckets[pick.id]?.points[pick.index] else { return nil }
+            guard let bucket = buckets[pick.id], bucket.samples.indices.contains(pick.index) else { return nil }
+            let sample = bucket.samples[pick.index]
             return HoverRow(
                 id: pick.id,
-                label: point.label,
-                valueText: ChartInteraction.hoverText(category: category, value: point.value),
-                color: color(for: point.label)
+                label: bucket.label,
+                valueText: ChartInteraction.hoverText(category: category, value: sample.value),
+                color: color(for: bucket.label)
             )
         }
 
@@ -530,11 +536,13 @@ private struct CategoryDetailView: View {
         appState.timeBox.window(customStart: appState.customStart).plottedDomain()
     }
 
-    /// Percent metrics keep a fixed 0…100 domain; states stay on 0/1; everything else zooms to data.
+    /// Percent metrics keep a fixed 0…100 domain. Lock uses the four HomeKit states.
+    /// Other states stay on 0/1. Everything else zooms to data.
     private var yAxisDomain: ClosedRange<Double> {
-        ChartAxisKind.of(category).domain(
-            values: enabledPoints.filter { !$0.isAnchor }.map(\.value)
-        )
+        if category == .lock {
+            return -0.05...3.05
+        }
+        return ChartAxisKind.of(category).domain(values: enabledPoints.map(\.value))
     }
 
     private var yAxisMarks: some AxisContent {
@@ -550,7 +558,10 @@ private struct CategoryDetailView: View {
                 }
             }
         case .state:
-            AxisMarks(position: .leading, values: [0, 1]) { value in
+            AxisMarks(
+                position: .leading,
+                values: category == .lock ? [0.0, 1, 2, 3] : [0.0, 1]
+            ) { value in
                 AxisGridLine()
                 AxisTick()
                 AxisValueLabel {
@@ -602,7 +613,14 @@ private struct CategoryDetailView: View {
     }
 
     private struct SeriesBucket {
-        var points: [ChartSeriesPoint]
+        var label: String
+        /// Drawn points. These decide which series is under the cursor.
+        var plotted: [ChartInteraction.Sample]
+        /// Every stored sample in the window. The tooltip reads this.
+        var samples: [ChartInteraction.Sample]
+        /// Time gate for the drawn points, which are farther apart.
+        var pickWindow: TimeInterval
+        /// Time gate from the full series, so a cursor in a hole does not match.
         var matchWindow: TimeInterval
     }
 
@@ -657,7 +675,7 @@ private struct CategoryDetailView: View {
         }
 
         var visibleCount: [String: Int] = [:]
-        for point in enabledPoints where !point.isAnchor {
+        for point in enabledPoints {
             visibleCount[point.sensorID, default: 0] += 1
         }
 
@@ -667,18 +685,34 @@ private struct CategoryDetailView: View {
         buckets.reserveCapacity(order.count)
         for sensorID in order {
             let sorted = grouped[sensorID, default: []].sorted { $0.timestamp < $1.timestamp }
-            let layout = SeriesGaps.layout(timestamps: sorted.map(\.timestamp))
+            let full = (appState.categoryWindowSamples[sensorID] ?? [])
+                .sorted { $0.timestamp < $1.timestamp }
+            let gapTimestamps = full.isEmpty ? sorted.map(\.timestamp) : full.map(\.timestamp)
+            let layout = SeriesGaps.layout(timestamps: gapTimestamps)
+            let pickLayout = SeriesGaps.layout(timestamps: sorted.map(\.timestamp))
             buckets[sensorID] = SeriesBucket(
-                points: sorted,
+                label: sorted.first?.label ?? "",
+                plotted: sorted.map {
+                    ChartInteraction.Sample(timestamp: $0.timestamp, value: $0.value)
+                },
+                samples: full.isEmpty
+                    ? sorted.map { ChartInteraction.Sample(timestamp: $0.timestamp, value: $0.value) }
+                    : full,
+                pickWindow: pickLayout.matchWindow,
                 matchWindow: layout.matchWindow
             )
             let markLonelySample = visibleCount[sensorID] == 1
             for (offset, point) in sorted.enumerated() {
+                let segment = SeriesGaps.segmentIndex(
+                    at: point.timestamp,
+                    timestamps: gapTimestamps,
+                    segments: layout.segments
+                )
                 plotted.append(
                     PlottedPoint(
                         point: point,
-                        segmentID: "\(sensorID)#\(layout.segments[offset])",
-                        drawsMarker: markLonelySample && !point.isAnchor
+                        segmentID: segment.map { "\(sensorID)#\($0)" } ?? "\(sensorID)#off-\(offset)",
+                        drawsMarker: markLonelySample
                     )
                 )
             }

@@ -48,6 +48,60 @@ final class ChartInteractionTests: XCTestCase {
         XCTAssertTrue(picks.isEmpty)
     }
 
+    func testHoverInADownsampledHoleDoesNotMatch() {
+        // Stride kept one point on each side of a 6h hole. The drawn pair looks
+        // connected, but the full series still has the hole.
+        let fullMinutes = [0.0, 60, 120, 480, 540]
+        let full = ChartInteraction.HoverSeries(
+            id: "room",
+            samples: fullMinutes.map { reading(minutes: $0, value: 21) },
+            matchWindow: SeriesGaps.layout(timestamps: fullMinutes.map { date(minutes: $0) }).matchWindow
+        )
+        let plottedMinutes = [0.0, 540]
+        let plotted = ChartInteraction.HoverSeries(
+            id: "room",
+            samples: plottedMinutes.map { reading(minutes: $0, value: 21) },
+            matchWindow: SeriesGaps.layout(timestamps: plottedMinutes.map { date(minutes: $0) }).matchWindow
+        )
+        let picks = ChartInteraction.resolvedPicks(
+            plotted: [plotted],
+            full: [full],
+            time: date(minutes: 300),
+            yValue: 21,
+            stateCategory: false
+        )
+        XCTAssertTrue(picks.isEmpty)
+    }
+
+    func testHoverReportsASpikeTheDrawnLineSkipped() {
+        let full = ChartInteraction.HoverSeries(
+            id: "room",
+            samples: [
+                reading(minutes: 0, value: 0),
+                reading(minutes: 1, value: 100),
+                reading(minutes: 2, value: 0),
+            ],
+            matchWindow: 90
+        )
+        let plotted = ChartInteraction.HoverSeries(
+            id: "room",
+            samples: [
+                reading(minutes: 0, value: 0),
+                reading(minutes: 2, value: 0),
+            ],
+            matchWindow: 180
+        )
+        let picks = ChartInteraction.resolvedPicks(
+            plotted: [plotted],
+            full: [full],
+            time: date(minutes: 1),
+            yValue: 0,
+            stateCategory: false
+        )
+        XCTAssertEqual(picks, [ChartInteraction.HoverPick(id: "room", index: 1)])
+        XCTAssertEqual(full.samples[picks[0].index].value, 100)
+    }
+
     func testCursorOnASegmentMatchesThatSample() {
         let timestamps = [0, 60, 120].map { date(minutes: $0) }
         let layout = SeriesGaps.layout(timestamps: timestamps)
@@ -219,6 +273,8 @@ final class ChartInteractionTests: XCTestCase {
         )
         XCTAssertEqual(ChartInteraction.hoverText(category: .lock, value: 1), "secured")
         XCTAssertEqual(ChartInteraction.hoverText(category: .lock, value: 0), "unsecured")
+        XCTAssertEqual(ChartInteraction.hoverText(category: .lock, value: 2), "jammed")
+        XCTAssertEqual(ChartInteraction.hoverText(category: .lock, value: 3), "unknown")
         XCTAssertEqual(ChartInteraction.hoverText(category: .motion, value: 1), "detected")
         XCTAssertEqual(ChartInteraction.hoverText(category: .leak, value: 0), "clear")
         let display = TemperatureUnit.fahrenheit.display(fromCelsius: 0)
@@ -330,7 +386,6 @@ final class ChartInteractionTests: XCTestCase {
         )
         XCTAssertEqual(points.map(\.timestamp), [date(minutes: 40), date(minutes: 100)])
         XCTAssertEqual(points.map(\.value), [40, 100])
-        XCTAssertFalse(points.contains(where: \.isAnchor))
     }
 
     func testEmptyWindowDropsTheAnchor() {
@@ -373,7 +428,8 @@ final class ChartInteractionTests: XCTestCase {
             timestamp: { $0.timestamp },
             value: { $0.value }
         )
-        XCTAssertEqual(points.map(\.isAnchor), [false, false])
+        XCTAssertEqual(points.map(\.timestamp), [date(minutes: 60), date(minutes: 120)])
+        XCTAssertEqual(points.map(\.value), [11, 12])
     }
 
     func testPaletteRepeatsFromTheStart() {
